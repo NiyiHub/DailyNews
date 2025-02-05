@@ -1,83 +1,16 @@
-import Image from "next/image"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Search, Menu, MoreHorizontal } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
+import Image from 'next/image';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Search, Menu, MoreHorizontal } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import Header from '@/components/ui/header';
+import GenFooter from '@/components/ui/footer';
 
 export default function Home() {
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
-      <header className="border-b sticky top-0 bg-white z-50">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-8">
-              <Link href="/" className="font-bold text-xl">
-                <Image src="/placeholder.svg" alt="ABC News" width={100} height={40} className="h-8 w-auto" />
-              </Link>
-              <nav className="hidden md:flex items-center gap-6">
-                <Link href="#" className="text-sm font-medium hover:text-primary">
-                  Video
-                </Link>
-                <Link href="#" className="text-sm font-medium hover:text-primary">
-                  Live
-                </Link>
-                <Link href="#" className="text-sm font-medium hover:text-primary">
-                  Shows
-                </Link>
-                <Link href="#" className="text-sm font-medium hover:text-primary">
-                  538
-                </Link>
-                <Link href="#" className="text-sm font-medium hover:text-primary">
-                  Shop
-                </Link>
-              </nav>
-            </div>
-            <div className="flex items-center gap-4">
-              <Button variant="ghost" size="icon" className="md:hidden">
-                <Menu className="h-5 w-5" />
-              </Button>
-              <Button variant="ghost" size="icon">
-                <Search className="h-5 w-5" />
-              </Button>
-              <Button variant="ghost" size="icon" className="md:hidden">
-                <MoreHorizontal className="h-5 w-5" />
-              </Button>
-              <Button className="hidden md:inline-flex bg-[#012169] text-white hover:bg-[#012169]/90">
-                Stream on hulu
-              </Button>
-            </div>
-          </div>
-        </div>
-        {/* Live Updates Bar */}
-        <div className="border-t overflow-x-auto whitespace-nowrap">
-          <div className="container mx-auto px-4">
-            <div className="flex items-center h-10 gap-4">
-              <Badge variant="destructive" className="rounded-sm">
-                Live Updates
-              </Badge>
-              <Link href="#" className="text-sm hover:text-primary">
-                DC plane crash
-              </Link>
-              <span className="text-muted-foreground">|</span>
-              <Badge variant="secondary" className="rounded-sm">
-                Latest
-              </Badge>
-              <Link href="#" className="text-sm hover:text-primary">
-                Hostages released
-              </Link>
-              <span className="text-muted-foreground">|</span>
-              <Link href="#" className="text-sm hover:text-primary">
-                DC plane crash victims
-              </Link>
-              <span className="text-muted-foreground">|</span>
-              <Link href="#" className="text-sm hover:text-primary">
-                Handgun sales
-              </Link>
-            </div>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       <main className="container mx-auto px-4 py-6">
         {/* Featured Story */}
@@ -93,13 +26,18 @@ export default function Home() {
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <Badge variant="outline">U.S.</Badge>
-                <span className="text-sm text-muted-foreground">3 hours ago</span>
+                <span className="text-sm text-muted-foreground">
+                  3 hours ago
+                </span>
               </div>
               <h1 className="text-2xl font-bold hover:text-primary">
-                <Link href="#">DC plane crash: Similar tragedy happened 43 years ago</Link>
+                <Link href="#">
+                  DC plane crash: Similar tragedy happened 43 years ago
+                </Link>
               </h1>
               <p className="text-muted-foreground">
-                Breaking news coverage of significant events unfolding in the nation's capital...
+                Breaking news coverage of significant events unfolding in the
+                nation's capital...
               </p>
             </div>
           </div>
@@ -121,7 +59,8 @@ export default function Home() {
                     <Link href="#">Related Breaking News Story {i}</Link>
                   </h3>
                   <p className="text-sm text-muted-foreground line-clamp-2">
-                    Quick summary of the breaking news story and its significance...
+                    Quick summary of the breaking news story and its
+                    significance...
                   </p>
                 </div>
               </div>
@@ -155,9 +94,13 @@ export default function Home() {
                     height={225}
                     className="rounded object-cover aspect-video"
                   />
-                  <div className="absolute bottom-2 right-2 bg-black/80 px-1.5 py-0.5 rounded text-xs">2:53</div>
+                  <div className="absolute bottom-2 right-2 bg-black/80 px-1.5 py-0.5 rounded text-xs">
+                    2:53
+                  </div>
                 </div>
-                <h3 className="font-semibold hover:text-primary/90">Video Title {i}</h3>
+                <h3 className="font-semibold hover:text-primary/90">
+                  Video Title {i}
+                </h3>
               </div>
             ))}
           </div>
@@ -227,7 +170,13 @@ export default function Home() {
         {/* FiveThirtyEight Section */}
         <section className="mb-12">
           <div className="flex items-center gap-2 mb-6">
-            <Image src="/placeholder.svg" alt="538" width={40} height={40} className="h-8 w-auto" />
+            <Image
+              src="/placeholder.svg"
+              alt="538"
+              width={40}
+              height={40}
+              className="h-8 w-auto"
+            />
             <h2 className="text-xl font-bold">FiveThirtyEight</h2>
             <Link href="#" className="text-primary hover:underline">
               &rarr;
@@ -243,7 +192,10 @@ export default function Home() {
                 className="rounded-lg object-cover w-full aspect-video"
               />
               <h3 className="font-semibold hover:text-primary">
-                <Link href="#">How Americans feel about Republicans' proposed health care cuts</Link>
+                <Link href="#">
+                  How Americans feel about Republicans' proposed health care
+                  cuts
+                </Link>
               </h3>
             </div>
             <div className="space-y-4">
@@ -255,7 +207,10 @@ export default function Home() {
                 className="rounded-lg object-cover w-full aspect-video"
               />
               <h3 className="font-semibold hover:text-primary">
-                <Link href="#">What polling tells us about Americans' support for Trump's mass deportations</Link>
+                <Link href="#">
+                  What polling tells us about Americans' support for Trump's
+                  mass deportations
+                </Link>
               </h3>
             </div>
           </div>
@@ -296,8 +251,8 @@ export default function Home() {
           </div>
           <div className="grid md:grid-cols-3 gap-6 mb-6">
             {[
-              "Kylie Kelce weighs rooting for Chiefs or Eagles in upcoming Super Bowl",
-              "Dwyane Wade shares he had a cancerous tumor removed from his kidney",
+              'Kylie Kelce weighs rooting for Chiefs or Eagles in upcoming Super Bowl',
+              'Dwyane Wade shares he had a cancerous tumor removed from his kidney',
               "Michael Strahan says daughter's cancer diagnosis was 'every parent's worst nightmare'",
             ].map((title, i) => (
               <div key={i} className="space-y-3">
@@ -319,8 +274,8 @@ export default function Home() {
             <div className="grid md:grid-cols-4 gap-4">
               {[
                 "Stand-up comedian Ken Flores dies at 28: 'We lost a good one'",
-                "Cronut creator teams up with Honey Bunches of Oats to launch new flavor",
-                "Lily Collins shares sweet birthday message for dad Phil Collins",
+                'Cronut creator teams up with Honey Bunches of Oats to launch new flavor',
+                'Lily Collins shares sweet birthday message for dad Phil Collins',
                 "Kristen Stewart, Steven Yeun on exploring humanity as AI robots in new film 'Love Me'",
               ].map((title, i) => (
                 <div key={i} className="space-y-2">
@@ -345,7 +300,13 @@ export default function Home() {
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-2">
               <h2 className="text-xl font-bold">Shop</h2>
-              <Image src="/placeholder.svg" alt="ABC News" width={60} height={30} className="h-6 w-auto" />
+              <Image
+                src="/placeholder.svg"
+                alt="ABC News"
+                width={60}
+                height={30}
+                className="h-6 w-auto"
+              />
             </div>
             <div className="flex gap-2">
               <Button variant="secondary" size="icon" className="rounded-full">
@@ -360,9 +321,9 @@ export default function Home() {
           </div>
           <div className="grid md:grid-cols-3 gap-6">
             {[
-              "How to choose the best tax software for you in 2025",
-              "13 watches to shop for style and function while checking the time",
-              "Shop these top essentials to tackle winter with ease",
+              'How to choose the best tax software for you in 2025',
+              '13 watches to shop for style and function while checking the time',
+              'Shop these top essentials to tackle winter with ease',
             ].map((title, i) => (
               <div key={i} className="space-y-3">
                 <Image
@@ -399,14 +360,15 @@ export default function Home() {
               />
               <h3 className="font-semibold hover:text-primary">
                 <Link href="#">
-                  11 years after a celebrated opening, massive solar plant faces a bleak future in the Mojave Desert
+                  11 years after a celebrated opening, massive solar plant faces
+                  a bleak future in the Mojave Desert
                 </Link>
               </h3>
               <div className="space-y-3 text-sm">
                 {[
-                  "Honda issues recall on nearly 300K cars due to fuel injection software issue",
-                  "Starbucks to remove some menu items, offer free refills",
-                  "U.S. economy grows solid 2.3% from October to December, 2.8% for full year 2024",
+                  'Honda issues recall on nearly 300K cars due to fuel injection software issue',
+                  'Starbucks to remove some menu items, offer free refills',
+                  'U.S. economy grows solid 2.3% from October to December, 2.8% for full year 2024',
                 ].map((title, i) => (
                   <Link key={i} href="#" className="block hover:text-primary">
                     {title}
@@ -432,13 +394,16 @@ export default function Home() {
                 className="rounded-lg object-cover w-full aspect-video"
               />
               <h3 className="font-semibold hover:text-primary">
-                <Link href="#">UNRWA director: Israel ban on aid agency will 'destroy' humanitarian efforts</Link>
+                <Link href="#">
+                  UNRWA director: Israel ban on aid agency will 'destroy'
+                  humanitarian efforts
+                </Link>
               </h3>
               <div className="space-y-3 text-sm">
                 {[
                   "Panama's president says there will be no negotiation about ownership of canal",
                   "Increased volcanic activity detected in Greece's popular tourist island of Santorini",
-                  "The oldest evidence for lead pollution comes from ancient Greece",
+                  'The oldest evidence for lead pollution comes from ancient Greece',
                 ].map((title, i) => (
                   <Link key={i} href="#" className="block hover:text-primary">
                     {title}
@@ -451,14 +416,16 @@ export default function Home() {
 
         {/* Sponsored Content Section */}
         <section className="mb-12">
-          <h2 className="text-sm text-muted-foreground mb-6">Sponsored Content By Taboola</h2>
+          <h2 className="text-sm text-muted-foreground mb-6">
+            Sponsored Content By Taboola
+          </h2>
           <div className="grid md:grid-cols-5 gap-4">
             {[
-              "Online Jobs in USA From Nigeria (Salaries Will Surprise You)",
-              "USA Companies Hiring Remote Workers In Nigeria - Check Open Positions",
-              "New Container Houses In Ilobu: Take A Look At The Prices!",
-              "Air Conditioners Without External Unit (Click To See Prices!)",
-              "Discover Budget-Friendly 10,000W Solar Kits Today",
+              'Online Jobs in USA From Nigeria (Salaries Will Surprise You)',
+              'USA Companies Hiring Remote Workers In Nigeria - Check Open Positions',
+              'New Container Houses In Ilobu: Take A Look At The Prices!',
+              'Air Conditioners Without External Unit (Click To See Prices!)',
+              'Discover Budget-Friendly 10,000W Solar Kits Today',
             ].map((title, i) => (
               <div key={i} className="space-y-2">
                 <Image
@@ -479,103 +446,7 @@ export default function Home() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-gray-100 mt-12">
-        <div className="container mx-auto px-4 py-8">
-          <div className="grid md:grid-cols-4 gap-8">
-            <div>
-              <h3 className="font-bold mb-4">Sections</h3>
-              <ul className="space-y-2 text-sm">
-                <li>
-                  <Link href="#" className="hover:text-primary">
-                    Politics
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#" className="hover:text-primary">
-                    International
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#" className="hover:text-primary">
-                    Business
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#" className="hover:text-primary">
-                    Health
-                  </Link>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-bold mb-4">Shows</h3>
-              <ul className="space-y-2 text-sm">
-                <li>
-                  <Link href="#" className="hover:text-primary">
-                    Good Morning America
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#" className="hover:text-primary">
-                    World News Tonight
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#" className="hover:text-primary">
-                    Nightline
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#" className="hover:text-primary">
-                    20/20
-                  </Link>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-bold mb-4">Connect</h3>
-              <ul className="space-y-2 text-sm">
-                <li>
-                  <Link href="#" className="hover:text-primary">
-                    Email Newsletters
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#" className="hover:text-primary">
-                    Social Media
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#" className="hover:text-primary">
-                    Apps
-                  </Link>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-bold mb-4">About</h3>
-              <ul className="space-y-2 text-sm">
-                <li>
-                  <Link href="#" className="hover:text-primary">
-                    Contact Us
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#" className="hover:text-primary">
-                    Terms of Use
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#" className="hover:text-primary">
-                    Privacy Policy
-                  </Link>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <GenFooter />
     </div>
-  )
+  );
 }
-
