@@ -22,19 +22,13 @@ export default function Header() {
             </Link>
             <nav className="hidden md:flex items-center gap-6">
               <Link href="#" className="text-sm font-medium hover:text-primary">
-                Video
+                Latest
               </Link>
               <Link href="#" className="text-sm font-medium hover:text-primary">
-                Live
+                Local News
               </Link>
               <Link href="#" className="text-sm font-medium hover:text-primary">
-                Shows
-              </Link>
-              <Link href="#" className="text-sm font-medium hover:text-primary">
-                538
-              </Link>
-              <Link href="#" className="text-sm font-medium hover:text-primary">
-                Shop
+                Election 2024
               </Link>
             </nav>
           </div>
@@ -49,7 +43,7 @@ export default function Header() {
               <MoreHorizontal className="h-5 w-5" />
             </Button>
             <Button className="hidden md:inline-flex bg-[#012169] text-white hover:bg-[#012169]/90">
-              Stream on hulu
+              Live TV
             </Button>
           </div>
         </div>
@@ -62,22 +56,46 @@ export default function Header() {
               Live Updates
             </Badge>
             <Link href="#" className="text-sm hover:text-primary">
-              DC plane crash
+              U.S
             </Link>
             <span className="text-muted-foreground">|</span>
             <Badge variant="secondary" className="rounded-sm">
-              Latest
+              World
             </Badge>
             <Link href="#" className="text-sm hover:text-primary">
-              Hostages released
+              Politics
             </Link>
             <span className="text-muted-foreground">|</span>
             <Link href="#" className="text-sm hover:text-primary">
-              DC plane crash victims
+              Health
             </Link>
             <span className="text-muted-foreground">|</span>
             <Link href="#" className="text-sm hover:text-primary">
-              Handgun sales
+              Science & Tech
+            </Link>
+            <span className="text-muted-foreground">|</span>
+            <Link href="#" className="text-sm hover:text-primary">
+              Business
+            </Link>
+            <span className="text-muted-foreground">|</span>
+            <Link href="#" className="text-sm hover:text-primary">
+              Lifestyle
+            </Link>
+            <span className="text-muted-foreground">|</span>
+            <Link href="#" className="text-sm hover:text-primary">
+              Opinion
+            </Link>
+            <span className="text-muted-foreground">|</span>
+            <Link href="#" className="text-sm hover:text-primary">
+              Media
+            </Link>
+            <span className="text-muted-foreground">|</span>
+            <Link href="#" className="text-sm hover:text-primary">
+              Sports
+            </Link>
+            <span className="text-muted-foreground">|</span>
+            <Link href="#" className="text-sm hover:text-primary">
+              Weather
             </Link>
           </div>
         </div>
