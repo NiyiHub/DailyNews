@@ -1,84 +1,61 @@
+'use client';
+
 import GenFooter from '@/components/ui/footer';
 import Header from '@/components/ui/header';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import EngagementButtons from '@/components/ui/engagement-buttons';
+import CommentsModal from '@/components/ui/comments-modal';
 
+// Update the interface to include engagement fields
+interface Article {
+  id: number;
+  title: string;
+  content: string;
+  author: string;
+  date: string;
+  category: string;
+  slug: string;
+  comments: Array<{ id: number; text: string; created_at: string }>;
+  likes: Array<{ id: number; created_at: string }>;
+  shares: Array<{ id: number; platform: string; created_at: string }>;
+}
 
-
-// const getArticle = (slug: string) => {
-//   const articles = {
-//     'major-political-development': {
-//       title: 'Major Political Development Shapes Global Policy',
-//       content: `
-//         In a significant turn of events, major political developments are reshaping global policy frameworks and international relations. The implications of these changes are far-reaching and could affect various sectors of the global economy.
-
-//         Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-
-//         The Response and Initial Impact
-
-//         Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-
-//         • Key policy changes and their implications
-//         • International response and cooperation
-//         • Economic impact assessment
-//         • Future outlook and predictions
-
-//         Looking Forward
-
-//         Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.
-
-//         Expert Analysis and Commentary
-
-//         Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.
-//       `,
-//       author: 'John Smith',
-//       date: '2025-02-05',
-//       category: 'Politics',
-//     },
-//     // Add more articles as needed
-//   };
-
-//   if (!articles[slug as keyof typeof articles]) {
-//     return null;
-//   }
-
-//   return articles[slug as keyof typeof articles];
-// };
-
+// Convert to client component
 export default function ArticlePage({ params }: { params: { slug: string } }) {
-//   const article = getArticle(params.slug);
+  const [article, setArticle] = useState<Article | null>(null);
+  const [showComments, setShowComments] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-//   if (!article) {
-//     notFound();
-//   }
-const article = {
-      title: 'Major Political Development Shapes Global Policy',
-      content: `
-        In a significant turn of events, major political developments are reshaping global policy frameworks and international relations. The implications of these changes are far-reaching and could affect various sectors of the global economy.
-  
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-  
-        The Response and Initial Impact
-  
-        Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-  
-        • Key policy changes and their implications
-        • International response and cooperation
-        • Economic impact assessment
-        • Future outlook and predictions
-  
-        Looking Forward
-  
-        Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.
-  
-        Expert Analysis and Commentary
-  
-        Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.
-      `,
-      author: 'Daily News AI',
-      date: '2025-02-05',
-      category: 'Politics',
-  };
+  useEffect(() => {
+    async function fetchArticle() {
+      try {
+        const response = await fetch(
+          'https://daily-news-5k66.onrender.com/news/written/get/'
+        );
+        const articles: Article[] = await response.json();
+        const articleId = parseInt(params.slug);
+        const foundArticle = articles[articleId - 1];
+        setArticle(foundArticle || null);
+      } catch (error) {
+        console.error('Error fetching article:', error);
+        setArticle(null);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchArticle();
+  }, [params.slug]);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!article) {
+    notFound();
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -110,7 +87,30 @@ const article = {
               ))}
             </div>
 
-            <div className="flex items-center gap-4 pt-6 border-t">
+            {/* Add engagement section */}
+            <div className="flex items-center justify-between border-t pt-4">
+              <EngagementButtons
+                newsId={article.id}
+                initialLikes={article.likes.length}
+                initialShares={article.shares.length}
+              />
+              <button
+                onClick={() => setShowComments(true)}
+                className="flex items-center gap-1 hover:text-primary transition-colors"
+              >
+                <span>💬 {article.comments.length}</span>
+              </button>
+            </div>
+
+            {showComments && (
+              <CommentsModal
+                newsId={article.id}
+                initialComments={article.comments}
+                onClose={() => setShowComments(false)}
+              />
+            )}
+
+            <div className="flex items-center gap-4 pt-6">
               <Link href="/text-news" className="text-primary hover:underline">
                 &larr; Back to News
               </Link>
