@@ -63,7 +63,29 @@ const newsItems = [
   },
 ];
 
-export default function NewsPage() {
+interface NewsItem {
+  id: number;
+  published_content: number;
+  title: string;
+  content: string;
+  created_at: string;
+  image_url: string;
+  likes: Array<{ id: number; created_at: string }>;
+  comments: Array<{ id: number; text: string; created_at: string }>;
+  shares: Array<{ id: number; platform: string; created_at: string }>;
+}
+
+export default async function NewsPage() {
+
+   // Fetch news data
+   const response = await fetch(
+    'https://daily-news-5k66.onrender.com/news/written-image/get/',
+    {
+      cache: 'no-store', // Disable caching to always get fresh data
+    }
+  );
+  const newsData: NewsItem[] = await response.json();
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -74,12 +96,12 @@ export default function NewsPage() {
         <div className="grid md:grid-cols-[2fr,1fr] gap-8">
           {/* Main Content */}
           <div className="space-y-8">
-            {newsItems.map((item) => (
+            {newsData.map((item) => (
               <article key={item.id} className="border-b pb-8">
                 <div className="md:flex gap-6">
                   <div className="md:w-1/3 mb-4 md:mb-0">
                     <Image
-                      src={item.image || '/placeholder.svg'}
+                      src={item.image_url || '/placeholder.svg'}
                       alt={item.title}
                       width={400}
                       height={300}
@@ -88,23 +110,23 @@ export default function NewsPage() {
                   </div>
                   <div className="md:w-2/3">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                      <span>{item.category}</span>
+                      <span>General</span>
                       <span>•</span>
-                      <time dateTime={item.date}>
-                        {new Date(item.date).toLocaleDateString()}
+                      <time dateTime={item.created_at}>
+                        {new Date(item.created_at).toLocaleDateString()}
                       </time>
                     </div>
                     <h2 className="text-2xl font-bold mb-2">
                       <Link
-                        href={`/web2/${item.slug}`}
+                        href={`/web2/${item.id}`}
                         className="hover:text-primary"
                       >
                         {item.title}
                       </Link>
                     </h2>
-                    <p className="text-muted-foreground mb-4">{item.preview}</p>
+                    <p className="text-muted-foreground mb-4">{item.content.slice(0, 300)}</p>
                     <Link
-                      href={`/web2/${item.slug}`}
+                      href={`/web2/${item.id}`}
                       className="text-primary hover:underline"
                     >
                       Read more

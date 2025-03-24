@@ -28,6 +28,53 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
   const [showComments, setShowComments] = useState(false);
   const [loading, setLoading] = useState(true);
 
+//   const art =  {
+//     "id": 1,
+//     "published_content": 1,
+//     "title": "Unveiling the Future: The Transformative Power of AI and Machine Learning",
+//     "content": "From enhancing customer experiences to revolutionizing healthcare, these technologies are transforming the world at an unprecedented pace. This article explores the current state of AI and ML, their applications, and the potential future these technologies hold.\r\n\r\n**The Foundations of AI and ML**\r\n\r\nAt their core, AI refers to the ability of machines to mimic human cognitive functions such as learning, problem-solving, and decision-making. Machine Learning, a subset of AI, involves the use of algorithms and statistical models to enable computers to improve their performance on tasks over time with minimal human intervention. These technologies draw heavily on data, leveraging vast datasets to train models that can recognize patterns and make predictions.\r\n\r\n**Current Applications**\r\n\r\n1. **Healthcare:**\r\n   AI and ML are making significant strides in the healthcare sector. From early disease detection to personalized medicine, AI algorithms analyze complex datasets, offering insights that enhance diagnostic accuracy and treatment plans. For example, machine learning models are used to interpret medical images, detect anomalies, and predict patient outcomes, thereby improving the efficiency of healthcare delivery.\r\n\r\n2. **Finance:**\r\n   In the financial sector, AI is employed for fraud detection, risk management, and algorithmic trading. Machine learning models analyze transaction patterns to identify fraudulent activities, while AI-driven chatbots enhance customer service by handling queries in real-time.\r\n\r\n3. **Retail:**\r\n   Retail businesses leverage AI and ML to optimize inventory management, forecast demand, and personalize customer experiences. Through recommendation engines and predictive analytics, companies can deliver tailored marketing strategies, fostering customer loyalty and increasing sales.\r\n\r\n4. **Autonomous Vehicles:**\r\n   AI and ML are the backbone of autonomous driving technology. Through real-time data processing from sensors and cameras, AI systems enable vehicles to navigate safely, recognize obstacles, and make informed decisions on the road.\r\n\r\n**Challenges and Ethical Considerations**\r\n\r\nDespite their transformative potential, AI and ML pose several challenges that must be addressed. The reliance on vast datasets raises concerns about privacy and data security. Additionally, bias in algorithms, often resulting from skewed training data, can lead to unfair outcomes in areas such as hiring and law enforcement.\r\n\r\nEthical considerations also extend to the potential displacement of jobs due to automation. While AI can enhance productivity, it is crucial to consider the social and economic implications and prioritize strategies for workforce reskilling and transition.\r\n\r\n**The Future of AI and ML**\r\n\r\nLooking ahead, the future of AI and ML is filled with possibilities. As computational power continues to grow and algorithms become more sophisticated, the potential applications of these technologies will expand. Emerging fields such as reinforcement learning and quantum computing could further accelerate progress.\r\n\r\nMoreover, interdisciplinary collaboration will be key to harnessing the full potential of AI and ML. By integrating insights from fields such as psychology, neuroscience, and ethics, AI developers can create systems that are not only powerful but also aligned with human values.\r\n\r\n**Conclusion**\r\n\r\nAI and Machine Learning are not just technological advancements; they are catalysts for a new era of innovation. While challenges exist, the benefits they offer across various sectors are profound. As we stand on the brink of this technological revolution, it is imperative to navigate these advancements with caution, ensuring that the deployment of AI and ML technologies is both ethical and inclusive, ultimately enhancing the human experience.",
+//     "image_url": "https://niyiblack.wordpress.com/wp-content/uploads/2025/03/google-logo-uhd-4k-wallpaper.jpg",
+//     "created_at": "2025-03-19T01:31:27.182625Z",
+//     "likes": [
+//         {
+//             "id": 1,
+//             "created_at": "2025-03-19T01:34:05.260827Z"
+//         },
+//         {
+//             "id": 2,
+//             "created_at": "2025-03-19T02:38:49.296134Z"
+//         }
+//     ],
+//     "comments": [
+//         {
+//             "id": 1,
+//             "written_image_content": 1,
+//             "text": "This is my comment on the article.",
+//             "created_at": "2025-03-19T01:34:50.238841Z"
+//         },
+//         {
+//             "id": 2,
+//             "written_image_content": 1,
+//             "text": "This is my comment on the article.",
+//             "created_at": "2025-03-19T02:39:16.853288Z"
+//         }
+//     ],
+//     "shares": [
+//         {
+//             "id": 1,
+//             "written_image_content": 1,
+//             "platform": "X",
+//             "created_at": "2025-03-19T01:35:38.469907Z"
+//         },
+//         {
+//             "id": 2,
+//             "written_image_content": 1,
+//             "platform": "X",
+//             "created_at": "2025-03-19T02:39:43.782477Z"
+//         }
+//     ]
+// }
+
   useEffect(() => {
     async function fetchArticle() {
       try {
@@ -35,9 +82,11 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
           'https://daily-news-5k66.onrender.com/news/written/get/'
         );
         const articles: Article[] = await response.json();
+        // console.log(articles);
         const articleId = parseInt(params.slug);
+        // console.log(articleId);
         const foundArticle = articles[articleId - 1];
-        setArticle(foundArticle || null);
+        // setArticle(foundArticle || null);
       } catch (error) {
         console.error('Error fetching article:', error);
         setArticle(null);
