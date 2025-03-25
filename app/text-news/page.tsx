@@ -4,6 +4,7 @@ import Link from 'next/link';
 import React from 'react';
 import EngagementButtons from '@/components/ui/engagement-buttons';
 import ArticleCard from '@/components/ui/article-card';
+import Image from 'next/image';
 
 // Define interface for the news data
 interface NewsItem {
@@ -45,7 +46,14 @@ export default async function News() {
             <section className="border rounded-lg p-4">
               <h3 className="font-bold mb-4">Advertisement</h3>
               <div className="bg-muted aspect-square flex items-center justify-center">
-                <span className="text-muted-foreground">Ad Space</span>
+                {/* <span className="text-muted-foreground">Ad Space</span> */}
+                <Image
+                  src="/icecream.jpg"
+                  alt="Ad Space"
+                  width={300}
+                  height={300}
+                  className="rounded-lg object-cover"
+                />
               </div>
             </section>
 

@@ -27,7 +27,7 @@ export default function ArticleCard({ news }: ArticleCardProps) {
         </Link>
       </h2>
       <p className="text-muted-foreground mb-4">
-        {news.content.slice(0, 200)}...
+        {news.content.slice(0, 500)}...
       </p>
       <div className="flex items-center justify-between">
         <EngagementButtons
