@@ -49,6 +49,7 @@ export default function EngagementButtons({
           {
             headers: {
               'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('sessionToken')}`
             },
             body: JSON.stringify({
               user_id: id,
@@ -112,6 +113,7 @@ export default function EngagementButtons({
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('sessionToken')}`
           },
           body: JSON.stringify({ user_id: id, content_id: newsId }),
         }
@@ -138,6 +140,7 @@ export default function EngagementButtons({
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('sessionToken')}`
           },
           body: JSON.stringify({ user_id: id, Platform: 'X' }),
         }
@@ -169,6 +172,7 @@ export default function EngagementButtons({
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('sessionToken')}`
           },
           body: JSON.stringify({
             user_id: id,

@@ -1,25 +1,68 @@
-'use client'
+'use client';
 
-export default function IdModal({ 
-  isOpen, 
-  onClose, 
-  onSubmit 
-}: { 
-  isOpen: boolean
-  onClose: () => void
-  onSubmit: (id: string) => void 
+import { useState } from 'react';
+import toast from 'react-hot-toast';
+
+interface UserResponse {
+  user_id: string;
+  session_token: string;
+  created_at: string;
+  last_active: string;
+}
+
+export default function IdModal({
+  isOpen,
+  onClose,
+  onSubmit,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (id: string) => void;
 }) {
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    const formData = new FormData(e.target as HTMLFormElement)
-    const id = formData.get('id') as string
-    if (id) {
-      onSubmit(id)
-      onClose()
-    }
-  }
+  const [isLoading, setIsLoading] = useState(false);
 
-  if (!isOpen) return null
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const formData = new FormData(e.target as HTMLFormElement);
+    const userId = formData.get('id') as string;
+
+    if (!userId) return;
+
+    setIsLoading(true);
+    try {
+      const response = await fetch(
+        'https://daily-news-5k66.onrender.com/news/api/user/login/',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ user_id: userId }),
+        }
+      );
+
+      const data: UserResponse = await response.json();
+
+      if (response.ok) {
+        // Store both user ID and session token
+        localStorage.setItem('myId', data.user_id);
+        localStorage.setItem('sessionToken', data.session_token);
+
+        onSubmit(data.user_id);
+        toast.success('User created successfully');
+      } else {
+        toast.error(data.error || 'Failed to create user');
+      }
+    } catch (error) {
+      console.error('Error creating user:', error);
+      toast.error('Something went wrong while creating user');
+    } finally {
+      setIsLoading(false);
+      onClose();
+    }
+  };
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
@@ -32,24 +75,27 @@ export default function IdModal({
             className="w-full border p-2 mb-4 rounded"
             placeholder="Enter your ID"
             required
+            disabled={isLoading}
           />
           <div className="flex justify-end gap-2">
             <button
               type="button"
               onClick={onClose}
               className="px-4 py-2 border rounded hover:bg-gray-100"
+              disabled={isLoading}
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-primary text-white rounded hover:bg-primary/90"
+              className="px-4 py-2 bg-primary text-white rounded hover:bg-primary/90 disabled:opacity-50"
+              disabled={isLoading}
             >
-              Submit
+              {isLoading ? 'Creating...' : 'Submit'}
             </button>
           </div>
         </form>
       </div>
     </div>
-  )
+  );
 }

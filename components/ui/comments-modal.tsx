@@ -52,6 +52,7 @@ export default function CommentsModal({
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('sessionToken')}`
           },
           body: JSON.stringify({
             text: newComment,
