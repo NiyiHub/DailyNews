@@ -26,17 +26,17 @@ export default function Header() {
   };
 
   return (
-    <header className="border-b sticky top-0 bg-white z-50">
+    <header className="border-b sticky top-0 bg-white">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-8">
             <Link href="/" className="font-bold text-xl">
               <Image
-                src="/placeholder.svg"
-                alt="ABC News"
+                src="/ai-daily.png"
+                alt="Ai daily News"
                 width={100}
                 height={40}
-                className="h-8 w-auto"
+                className="h-14 w-auto"
               />
             </Link>
             <nav className="hidden md:flex items-center gap-6">

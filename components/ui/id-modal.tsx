@@ -51,7 +51,7 @@ export default function IdModal({
         onSubmit(data.user_id);
         toast.success('User created successfully');
       } else {
-        toast.error(data.error || 'Failed to create user');
+        toast.error('Failed to create user');
       }
     } catch (error) {
       console.error('Error creating user:', error);
@@ -65,7 +65,7 @@ export default function IdModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-auto">
       <div className="bg-white p-6 rounded-lg w-96">
         <h2 className="text-xl font-bold mb-4">Enter Your ID</h2>
         <form onSubmit={handleSubmit}>

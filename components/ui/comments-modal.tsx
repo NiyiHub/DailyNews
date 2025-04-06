@@ -7,17 +7,19 @@ import IdModal from './id-modal';
 interface Comment {
   id: number;
   text: string;
-  created_at: string;
+  created_at?: string;
 }
 
 interface CommentsModalProps {
   newsId: number;
+  url: string;
   initialComments: Comment[];
   onClose: () => void;
 }
 
 export default function CommentsModal({
   newsId,
+  url,
   initialComments,
   onClose,
 }: CommentsModalProps) {
@@ -47,7 +49,7 @@ export default function CommentsModal({
   const handleComment = async () => {
     try {
       const response = await fetch(
-        `https://daily-news-5k66.onrender.com/news/written/${newsId}/comment/`,
+        `${url}`,
         {
           method: 'POST',
           headers: {
@@ -101,11 +103,11 @@ export default function CommentsModal({
         </div>
 
         <div className="max-h-[400px] overflow-y-auto mb-4">
-          {comments.map((comment) => (
-            <div key={comment.id} className="border-b py-3">
-              <p className="text-gray-700">{comment.text}</p>
+          {comments.map((comment, idx) => (
+            <div key={idx} className="border-b py-3">
+              <p className="text-gray-700">{comment?.text}</p>
               <span className="text-sm text-gray-500">
-                {new Date(comment.created_at).toLocaleDateString()}
+                {comment && new Date(comment?.created_at || new Date()).toLocaleDateString()}
               </span>
             </div>
           ))}

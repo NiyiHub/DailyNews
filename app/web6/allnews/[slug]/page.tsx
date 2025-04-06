@@ -1,53 +1,65 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import GenFooter from '@/components/ui/footer';
 import Header from '@/components/ui/header';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Play, Pause, Volume2, VolumeX, MessageCircle } from 'lucide-react';
+import VideoPlayer from '@/components/ui/videoplayer';
 import EngagementButtons from '@/components/ui/engagement-buttons';
-import CommentsModal from '@/components/ui/comments-modal';
 import Image from 'next/image';
-import toast from 'react-hot-toast';
-import IdModal from '@/components/ui/id-modal';
+import CommentsModal from '@/components/ui/comments-modal';
+import Modal from '@/components/ui/modal';
 
-// Update the interface to include engagement fields
-interface Article {
+interface VideoArticle {
   id: number;
+  published_content: number;
   title: string;
-  content: string;
-  author: string;
+  video_url: string;
+  summary: string;
   created_at: string;
-  category: string;
-  slug: string;
-  comments: Array<{ id: number; text: string; created_at: string }>;
   likes: Array<{ id: number; created_at: string }>;
-  shares: Array<{ id: number; platform: string; created_at: string }>;
+  comments: Array<{
+    id: number;
+    video_content: number;
+    text: string;
+    created_at: string;
+  }>;
+  shares: Array<{
+    id: number;
+    video_content: number;
+    platform: string;
+    created_at: string;
+  }>;
 }
 
-export default function ArticlePage({ params }: { params: { slug: string } }) {
-  const [article, setArticle] = useState<Article | null>(null);
-  const [showComments, setShowComments] = useState(false);
-  const [showIdModal, setShowIdModal] = useState(false);
+export default function VideoArticlePage({
+  params,
+}: {
+  params: { slug: string };
+}) {
+  const [article, setArticle] = useState<VideoArticle | null>(null);
   const [loading, setLoading] = useState(true);
-  const [userId, setUserId] = useState('');
+  const [showComments, setShowComments] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
-    const storedId = localStorage.getItem('myId');
-    if (storedId) {
-      setUserId(storedId);
-    }
+    setIsModalOpen(true);
   }, []);
 
   useEffect(() => {
-    async function fetchArticle() {
+    const fetchArticle = async () => {
       try {
         const response = await fetch(
-          'https://daily-news-5k66.onrender.com/news/written/get/'
+          'https://daily-news-5k66.onrender.com/news/video/get/'
         );
-        const articles: Article[] = await response.json();
+        const articles: VideoArticle[] = await response.json();
         const articleId = parseInt(params.slug);
-        const foundArticle = articles[articleId - 1];
+        const foundArticle = articles.find(
+          (article) => article.id === articleId
+        );
         setArticle(foundArticle || null);
       } catch (error) {
         console.error('Error fetching article:', error);
@@ -55,32 +67,13 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
       } finally {
         setLoading(false);
       }
-    }
+    };
 
     fetchArticle();
   }, [params.slug]);
 
-  const handleCommentsClick = () => {
-    if (!userId) {
-      setShowIdModal(true);
-    } else {
-      setShowComments(true);
-    }
-  };
-
-  const handleIdSubmit = (newId: string) => {
-    localStorage.setItem('myId', newId);
-    setUserId(newId);
-    setShowIdModal(false);
-    setShowComments(true); // Show comments modal after ID is submitted
-  };
-
   if (loading) {
-    return (
-      <div>
-        <p>Loading...</p>
-      </div>
-    );
+    return <div>Loading...</div>;
   }
 
   if (!article) {
@@ -91,69 +84,70 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
     <div className="min-h-screen flex flex-col">
       <Header />
 
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
+        <p className="mb-4">
+          Daily News is an AI-driven online news website built to keep you
+          informed about local, national, and global events and affairs around
+          you. We employ an artificial intelligence (AI) system that is
+          custom-designed and trained for news curation and production. As with
+          many AI systems, our news platform strives for perfection and
+          accuracy, but it is not error-free. Our AI-powered news platform
+          enables full transparency of our news production processes while
+          adhering to strict protocols. Daily News aims to redefine modern
+          journalism through cutting-edge artificial intelligence by minimizing
+          errors and promoting open news reporting.
+        </p>
+        <Button onClick={() => setIsModalOpen(false)}>I understand</Button>
+      </Modal>
+
       <main className="flex-1 container mx-auto px-4 py-8">
         <div className="grid md:grid-cols-[1fr,300px] gap-8">
           {/* Main Content */}
           <article className="space-y-6">
             <div className="space-y-4">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <span>{article.category}</span>
-                <span>•</span>
                 <time dateTime={article.created_at}>
                   {new Date(article.created_at).toLocaleDateString()}
                 </time>
               </div>
               <h1 className="text-4xl font-bold">{article.title}</h1>
-              <div className="flex items-center gap-2 text-sm">
-                <span>By Daily News AI</span>
-              </div>
             </div>
+
+            <VideoPlayer src={article.video_url} />
 
             <div className="prose prose-gray max-w-none">
-              {article.content.split('\n\n').map((paragraph, index) => (
-                <p key={index} className="mb-4">
-                  {paragraph}
-                </p>
-              ))}
+              <p className="mb-4">{article.summary}</p>
             </div>
 
-            {/* Add engagement section */}
-            <div className="flex items-center justify-between border-t pt-4">
+            {/* Engagement Section */}
+            <div className="flex items-center gap-4 text-sm text-muted-foreground border-t pt-4">
               <EngagementButtons
                 newsId={article.id}
                 initialLikes={article.likes.length}
                 initialShares={article.shares.length}
+                content_type="video"
+                url="https://daily-news-5k66.onrender.com/news/video"
               />
+
               <button
-                onClick={handleCommentsClick}
+                onClick={() => setShowComments(true)}
                 className="flex items-center gap-1 hover:text-primary transition-colors"
               >
-                <span>💬 {article.comments.length}</span>
+                <span className="flex items-center gap-1">
+                  <MessageCircle /> {article.comments.length}
+                </span>
               </button>
             </div>
-
-            {showComments && (
-              <CommentsModal
-                newsId={article.id}
-                initialComments={article.comments}
-                onClose={() => setShowComments(false)}
-              />
-            )}
-
-            {showIdModal && (
-              <IdModal
-                isOpen={showIdModal}
-                onClose={() => setShowIdModal(false)}
-                onSubmit={handleIdSubmit}
-              />
-            )}
-
-            <div className="flex items-center gap-4 pt-6">
-              <Link href="/text-news" className="text-primary hover:underline">
-                &larr; Back to News
-              </Link>
-            </div>
           </article>
+
+          {showComments && (
+            <CommentsModal
+              url={`https://daily-news-5k66.onrender.com/news/video/${article.id}/comment/`}
+              newsId={article.id}
+              initialComments={article.comments}
+              onClose={() => setShowComments(false)}
+            />
+          )}
 
           {/* Sidebar */}
           <div className="space-y-8">
@@ -161,9 +155,8 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
             <section className="border rounded-lg p-4">
               <h3 className="font-bold mb-4">Advertisement</h3>
               <div className="bg-muted aspect-square flex items-center justify-center">
-                {/* <span className="text-muted-foreground">Ad Space</span> */}
                 <Image
-                  src="/book.jpg"
+                  src="/icecream.jpg"
                   alt="Ad Space"
                   width={300}
                   height={300}

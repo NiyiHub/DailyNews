@@ -1,18 +1,17 @@
 'use client';
-import { Button } from '@/components/ui/button';
-import CommentsModal from '@/components/ui/comments-modal';
-import EngagementButtons from '@/components/ui/engagement-buttons';
+
 import GenFooter from '@/components/ui/footer';
 import Header from '@/components/ui/header';
-import IdModal from '@/components/ui/id-modal';
-import Modal from '@/components/ui/modal';
-import { MessageCircle } from 'lucide-react';
-import Image from 'next/image';
-// import InfoSec from '@/components/ui/info';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
+import EngagementButtons from '@/components/ui/engagement-buttons';
+import CommentsModal from '@/components/ui/comments-modal';
+import Image from 'next/image';
+import toast from 'react-hot-toast';
+import IdModal from '@/components/ui/id-modal';
 import ReactMarkdown from 'react-markdown';
+import { MessageCircle } from 'lucide-react';
 
 // Update the interface to include engagement fields
 interface Article {
@@ -34,9 +33,12 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
   const [showIdModal, setShowIdModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState('');
-  const [isModalOpen, setIsModalOpen] = useState(false);
+
   useEffect(() => {
-    setIsModalOpen(true);
+    const storedId = localStorage.getItem('myId');
+    if (storedId) {
+      setUserId(storedId);
+    }
   }, []);
 
   useEffect(() => {
@@ -90,25 +92,6 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-        <p className="mb-4">
-          Daily News is an AI-driven online news website built to keep you
-          informed about local, national, and global events and affairs around
-          you. We employ an artificial intelligence (AI) system that is
-          custom-designed and trained for news curation and production. As with
-          many AI systems, our news platform strives for perfection and
-          accuracy, but it is not error-free. Our AI-powered news platform
-          operates through an algorithm, transforming how news is gathered,
-          created, and disseminated. This intelligent system meticulously
-          filters information, generates story ideas, conducts digital
-          newsgathering, and crafts news content while adhering to strict
-          protocols. Daily News aims to redefine modern journalism through
-          cutting-edge artificial intelligence by minimizing errors and
-          promoting open news reporting.
-        </p>
-        <Button onClick={() => setIsModalOpen(false)}>I understand</Button>
-      </Modal>
 
       <main className="flex-1 container mx-auto px-4 py-8">
         <div className="grid md:grid-cols-[1fr,300px] gap-8">

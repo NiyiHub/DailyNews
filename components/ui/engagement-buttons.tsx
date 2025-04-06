@@ -3,8 +3,17 @@
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import IdModal from './id-modal';
+import {
+  User,
+  ArrowRight,
+  LucideKey,
+  Heart,
+  Send,
+  Bookmark,
+} from 'lucide-react';
 
 interface EngagementButtonsProps {
+  url: string;
   newsId: number;
   initialLikes: number;
   initialShares: number;
@@ -14,6 +23,7 @@ interface EngagementButtonsProps {
 }
 
 export default function EngagementButtons({
+  url,
   newsId,
   initialLikes,
   initialShares,
@@ -44,20 +54,17 @@ export default function EngagementButtons({
       if (!id) return;
 
       try {
-        const response = await fetch(
-          `https://daily-news-5k66.onrender.com/news/written/${newsId}/bookmark/status`,
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${localStorage.getItem('sessionToken')}`
-            },
-            body: JSON.stringify({
-              user_id: id,
-              content_id: `${newsId}`,
-              content_type: content_type,
-            }),
-          }
-        );
+        const response = await fetch(`${url}/${newsId}/bookmark/`, {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('sessionToken')}`,
+          },
+          body: JSON.stringify({
+            user_id: id,
+            content_id: `${newsId}`,
+            content_type: content_type,
+          }),
+        });
         if (response.ok) {
           const data = await response.json();
           setIsBookmarked(data.isBookmarked);
@@ -107,17 +114,14 @@ export default function EngagementButtons({
 
   const handleLike = async () => {
     try {
-      const response = await fetch(
-        `https://daily-news-5k66.onrender.com/news/written/${newsId}/like/`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('sessionToken')}`
-          },
-          body: JSON.stringify({ user_id: id, content_id: newsId }),
-        }
-      );
+      const response = await fetch(`${url}/${newsId}/like/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('sessionToken')}`,
+        },
+        body: JSON.stringify({ user_id: id, content_id: newsId }),
+      });
       const data = await response.json();
 
       if (response.ok) {
@@ -134,17 +138,14 @@ export default function EngagementButtons({
 
   const handleShare = async () => {
     try {
-      const response = await fetch(
-        `https://daily-news-5k66.onrender.com/news/written/${newsId}/share/`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('sessionToken')}`
-          },
-          body: JSON.stringify({ user_id: id, Platform: 'X' }),
-        }
-      );
+      const response = await fetch(`${url}/${newsId}/share/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('sessionToken')}`,
+        },
+        body: JSON.stringify({ user_id: id, Platform: 'X' }),
+      });
       const data = await response.json();
 
       if (response.ok) {
@@ -166,21 +167,18 @@ export default function EngagementButtons({
       content_type,
     });
     try {
-      const response = await fetch(
-        `https://daily-news-5k66.onrender.com/news/written/${newsId}/bookmark/`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('sessionToken')}`
-          },
-          body: JSON.stringify({
-            user_id: id,
-            content_id: newsId,
-            content_type,
-          }),
-        }
-      );
+      const response = await fetch(`${url}/${newsId}/bookmark/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('sessionToken')}`,
+        },
+        body: JSON.stringify({
+          user_id: id,
+          content_id: newsId,
+          content_type,
+        }),
+      });
 
       const data = await response.json();
 
@@ -216,13 +214,17 @@ export default function EngagementButtons({
           onClick={() => handleAction('like')}
           className="flex items-center gap-1 hover:text-primary transition-colors"
         >
-          <span>❤️ {likes}</span>
+          <span className="flex items-center gap-1">
+            <Heart size={28} /> {likes}
+          </span>
         </button>
         <button
           onClick={() => handleAction('share')}
           className="flex items-center gap-1 hover:text-primary transition-colors"
         >
-          <span>🔄 {shares}</span>
+          <span className="flex items-center gap-1">
+            <Send size={28} /> {shares}
+          </span>
         </button>
         <button
           onClick={() => handleAction('bookmark')}
@@ -230,8 +232,8 @@ export default function EngagementButtons({
             isBookmarked ? 'text-primary' : 'hover:text-primary'
           }`}
         >
-          <span>
-            {isBookmarked ? '🔖' : '📑'} {bookmarks}
+          <span className="flex items-center gap-1">
+            <Bookmark /> {bookmarks}
           </span>
         </button>
       </div>
