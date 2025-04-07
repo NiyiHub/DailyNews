@@ -137,6 +137,9 @@ export default function EngagementButtons({
   };
 
   const handleShare = async () => {
+    const link = `${url}/${newsId}`;
+    await navigator.clipboard.writeText(link);
+    toast.success('Link copied to clipboard');
     try {
       const response = await fetch(`${url}/${newsId}/share/`, {
         method: 'POST',

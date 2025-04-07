@@ -12,6 +12,7 @@ import EngagementButtons from '@/components/ui/engagement-buttons';
 import Image from 'next/image';
 import CommentsModal from '@/components/ui/comments-modal';
 import Modal from '@/components/ui/modal';
+import welcomeModalContent from '@/lib/modal-content';
 
 interface VideoArticle {
   id: number;
@@ -86,18 +87,19 @@ export default function VideoArticlePage({
       <Header />
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-        <p className="mb-4">
-          Daily News is an AI-driven online news website built to keep you
-          informed about local, national, and global events and affairs around
-          you. We employ an artificial intelligence (AI) system that is
-          custom-designed and trained for news curation and production. As with
-          many AI systems, our news platform strives for perfection and
-          accuracy, but it is not error-free. Our AI-powered news platform
-          enables full transparency of our news production processes while
-          adhering to strict protocols. Daily News aims to redefine modern
-          journalism through cutting-edge artificial intelligence by minimizing
-          errors and promoting open news reporting.
-        </p>
+        <div className="text-center mb-6">
+          <h2 className="text-2xl font-bold mb-2">
+            {welcomeModalContent.brief}
+          </h2>
+          <Image
+            src={welcomeModalContent.image}
+            alt="Daily News"
+            width={200}
+            height={80}
+            className="mx-auto mb-4"
+          />
+        </div>
+        <p className="mb-4">{welcomeModalContent.text}</p>
         <Button onClick={() => setIsModalOpen(false)}>I understand</Button>
       </Modal>
 

@@ -36,6 +36,21 @@ interface VideoArticle {
   }>;
 }
 
+interface Evidence {
+  url: string;
+  source: string;
+  summary: string;
+  verification_status: string;
+  supporting_documents: Array<{
+    url: string;
+    title: string;
+  }>;
+}
+
+interface EvidenceResponse {
+  evidence: Evidence;
+}
+
 export default function VideoArticlePage({
   params,
 }: {
@@ -45,10 +60,28 @@ export default function VideoArticlePage({
   const [loading, setLoading] = useState(true);
   const [showComments, setShowComments] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [evidence, setEvidence] = useState<Evidence | null>(null);
 
   useEffect(() => {
     setIsModalOpen(true);
   }, []);
+
+  useEffect(() => {
+    const fetchEvidence = async () => {
+      try {
+        const response = await fetch(
+          `https://daily-news-5k66.onrender.com/process/published/${params.slug}/evidence/`
+        );
+        const data: EvidenceResponse = await response.json();
+        setEvidence(data.evidence);
+        setIsModalOpen(true);
+      } catch (error) {
+        console.error('Error fetching evidence:', error);
+      }
+    };
+
+    fetchEvidence();
+  }, [params.slug]);
 
   useEffect(() => {
     const fetchArticle = async () => {
@@ -86,19 +119,66 @@ export default function VideoArticlePage({
       <Header />
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-        <p className="mb-4">
-          Daily News is an AI-driven online news website built to keep you
-          informed about local, national, and global events and affairs around
-          you. We employ an artificial intelligence (AI) system that is
-          custom-designed and trained for news curation and production. As with
-          many AI systems, our news platform strives for perfection and
-          accuracy, but it is not error-free. Our AI-powered news platform
-          enables full transparency of our news production processes while
-          adhering to strict protocols. Daily News aims to redefine modern
-          journalism through cutting-edge artificial intelligence by minimizing
-          errors and promoting open news reporting.
-        </p>
-        <Button onClick={() => setIsModalOpen(false)}>I understand</Button>
+        {evidence ? (
+          <div className="space-y-4">
+            <h2 className="text-xl font-bold mb-4">Article Evidence</h2>
+            
+            <div className="bg-muted p-4 rounded-lg">
+              <p className="font-semibold">Source: {evidence.source}</p>
+              <a 
+                href={evidence.url} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-primary hover:underline"
+              >
+                Original Article
+              </a>
+            </div>
+
+            <div>
+              <p className="font-semibold mb-2">Summary:</p>
+              <p className="text-muted-foreground">{evidence.summary}</p>
+            </div>
+
+            <div>
+              <p className="font-semibold mb-2">Verification Status:</p>
+              <span className={`inline-block px-3 py-1 rounded-full text-sm ${
+                evidence.verification_status === 'True' 
+                  ? 'bg-green-100 text-green-800'
+                  : evidence.verification_status === 'Partially True'
+                  ? 'bg-yellow-100 text-yellow-800'
+                  : 'bg-red-100 text-red-800'
+              }`}>
+                {evidence.verification_status}
+              </span>
+            </div>
+
+            {evidence.supporting_documents.length > 0 && (
+              <div>
+                <p className="font-semibold mb-2">Supporting Documents:</p>
+                <ul className="space-y-2">
+                  {evidence.supporting_documents.map((doc, index) => (
+                    <li key={index}>
+                      <a
+                        href={doc.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary hover:underline"
+                      >
+                        {doc.title}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        ) : (
+          <p>Loading evidence...</p>
+        )}
+        <div className="mt-6">
+          <Button onClick={() => setIsModalOpen(false)}>Close</Button>
+        </div>
       </Modal>
 
       <main className="flex-1 container mx-auto px-4 py-8">

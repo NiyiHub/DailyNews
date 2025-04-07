@@ -13,6 +13,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
+import welcomeModalContent from '@/lib/modal-content';
 
 // Update the interface to include engagement fields
 interface Article {
@@ -90,23 +91,18 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-        <p className="mb-4">
-          Daily News is an AI-driven online news website built to keep you
-          informed about local, national, and global events and affairs around
-          you. We employ an artificial intelligence (AI) system that is
-          custom-designed and trained for news curation and production. As with
-          many AI systems, our news platform strives for perfection and
-          accuracy, but it is not error-free. Our AI-powered news platform
-          operates through an algorithm, transforming how news is gathered,
-          created, and disseminated. This intelligent system meticulously
-          filters information, generates story ideas, conducts digital
-          newsgathering, and crafts news content while adhering to strict
-          protocols. Daily News aims to redefine modern journalism through
-          cutting-edge artificial intelligence by minimizing errors and
-          promoting open news reporting.
-        </p>
+        <div className="text-center mb-6">
+          <h2 className="text-2xl font-bold mb-2">{welcomeModalContent.brief}</h2>
+          <Image
+            src={welcomeModalContent.image}
+            alt="Daily News"
+            width={200}
+            height={80}
+            className="mx-auto mb-4"
+          />
+        </div>
+        <p className="mb-4">{welcomeModalContent.text}</p>
         <Button onClick={() => setIsModalOpen(false)}>I understand</Button>
       </Modal>
 
