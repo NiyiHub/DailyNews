@@ -61,7 +61,7 @@ export default async function NewsPage() {
                     </div>
                     <h2 className="text-2xl font-bold mb-2">
                       <Link
-                        href={`/web5/allnews/${item.id}`}
+                        href={`/web8/allnews/${item.id}`}
                         className="hover:text-primary"
                       >
                         {item.title}
@@ -73,7 +73,7 @@ export default async function NewsPage() {
                       </ReactMarkdown>
                     </div>
                     <Link
-                      href={`/web5/allnews/${item.id}`}
+                      href={`/web8/allnews/${item.id}`}
                       className="text-primary hover:underline"
                     >
                       <span className="flex items-center gap-1">
