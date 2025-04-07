@@ -94,11 +94,13 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
         <div className="grid md:grid-cols-[1fr,300px] gap-8">
           {/* Main Content */}
           <article className="space-y-6">
-            <Link href="/web2/allnews" className="text-primary hover:underline">
+            <Link href="/web5/allnews" className="text-primary hover:underline">
               &larr; Back to News
             </Link>
             <div className="space-y-4">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span>{article.category || 'General'}</span>
+                <span>•</span>
                 <time dateTime={article.created_at}>
                   {new Date(article.created_at).toLocaleDateString()}
                 </time>
@@ -150,7 +152,7 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
 
             <div className="flex items-center gap-4 pt-6">
               <Link
-                href="/web2/allnews"
+                href="/web5/allnews"
                 className="text-primary hover:underline"
               >
                 &larr; Back to News

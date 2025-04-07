@@ -11,6 +11,7 @@ interface NewsItem {
   title: string;
   content: string;
   created_at: string;
+  category: string;
   image_url: string;
   likes: Array<{ id: number; created_at: string }>;
   comments: Array<{ id: number; text: string; created_at: string }>;
@@ -51,6 +52,8 @@ export default async function NewsPage() {
                   </div>
                   <div className="md:w-2/3">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                      <span>{item.category || 'General'}</span>
+                      <span>•</span>
                       <time dateTime={item.created_at}>
                         {new Date(item.created_at).toLocaleDateString()}
                       </time>
