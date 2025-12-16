@@ -1,0 +1,311 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import GenFooter from '@/components/ui/footer';
+import Header from '@/components/ui/header';
+import Link from 'next/link';
+import { notFound } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { Play, Pause, Volume2, VolumeX, MessageCircle } from 'lucide-react';
+import VideoPlayer from '@/components/ui/videoplayer';
+import EngagementButtons from '@/components/ui/engagement-buttons';
+import Image from 'next/image';
+import CommentsModal from '@/components/ui/comments-modal';
+import Modal from '@/components/ui/modal';
+
+interface VideoArticle {
+  id: number;
+  published_content: number;
+  title: string;
+  video_url: string;
+  summary: string;
+  created_at: string;
+  category: string;
+  likes: Array<{ id: number; created_at: string }>;
+  comments: Array<{
+    id: number;
+    video_content: number;
+    text: string;
+    created_at: string;
+  }>;
+  shares: Array<{
+    id: number;
+    video_content: number;
+    platform: string;
+    created_at: string;
+  }>;
+}
+
+interface Evidence {
+  url: string;
+  source: string;
+  summary: string;
+  verification_status: string;
+  supporting_documents: Array<{
+    url: string;
+    title: string;
+  }>;
+}
+
+interface EvidenceResponse {
+  evidence: Evidence;
+}
+
+export default function VideoArticlePage({
+  params,
+}: {
+  params: { slug: string };
+}) {
+  const [article, setArticle] = useState<VideoArticle | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [showComments, setShowComments] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [evidence, setEvidence] = useState<Evidence | null>(null);
+
+  useEffect(() => {
+    setIsModalOpen(true);
+  }, []);
+
+  useEffect(() => {
+    const fetchEvidence = async () => {
+      try {
+        const response = await fetch(
+          `https://daily-news-5k66.onrender.com/process/published/${params.slug}/evidence/`
+        );
+        const data: EvidenceResponse = await response.json();
+        setEvidence(data.evidence);
+        setIsModalOpen(true);
+      } catch (error) {
+        console.error('Error fetching evidence:', error);
+      }
+    };
+
+    fetchEvidence();
+  }, [params.slug]);
+
+  useEffect(() => {
+    const fetchArticle = async () => {
+      try {
+        const response = await fetch(
+          'https://daily-news-5k66.onrender.com/news/video/get/'
+        );
+        const articles: VideoArticle[] = await response.json();
+        const articleId = parseInt(params.slug);
+        const foundArticle = articles.find(
+          (article) => article.id === articleId
+        );
+        setArticle(foundArticle || null);
+      } catch (error) {
+        console.error('Error fetching article:', error);
+        setArticle(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchArticle();
+  }, [params.slug]);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!article) {
+    notFound();
+  }
+
+  return (
+    <div className="min-h-screen flex flex-col">
+      <Header />
+
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
+        {evidence ? (
+          <div className="space-y-4">
+            <h2 className="text-xl font-bold mb-4">Article Evidence</h2>
+            
+            <div className="bg-muted p-4 rounded-lg">
+              <p className="font-semibold">Source: {evidence.source}</p>
+              <a 
+                href={evidence.url} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-primary hover:underline"
+              >
+                Original Article
+              </a>
+            </div>
+
+            <div>
+              <p className="font-semibold mb-2">Summary:</p>
+              <p className="text-muted-foreground">{evidence.summary}</p>
+            </div>
+
+            <div>
+              <p className="font-semibold mb-2">Verification Status:</p>
+              <span className={`inline-block px-3 py-1 rounded-full text-sm ${
+                evidence.verification_status === 'True' 
+                  ? 'bg-green-100 text-green-800'
+                  : evidence.verification_status === 'Partially True'
+                  ? 'bg-yellow-100 text-yellow-800'
+                  : 'bg-red-100 text-red-800'
+              }`}>
+                {evidence.verification_status}
+              </span>
+            </div>
+
+            {evidence.supporting_documents.length > 0 && (
+              <div>
+                <p className="font-semibold mb-2">Supporting Documents:</p>
+                <ul className="space-y-2">
+                  {evidence.supporting_documents.map((doc, index) => (
+                    <li key={index}>
+                      <a
+                        href={doc.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary hover:underline"
+                      >
+                        {doc.title}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        ) : (
+          <p>Loading evidence...</p>
+        )}
+        <div className="mt-6">
+          <Button onClick={() => setIsModalOpen(false)}>Close</Button>
+        </div>
+      </Modal>
+
+      <main className="flex-1 container mx-auto px-4 py-8">
+        <div className="flex items-center gap-4 pb-6">
+          <Link href="/web9/allnews" className="text-primary hover:underline">
+            &larr; Back to News
+          </Link>
+        </div>
+        <div className="grid md:grid-cols-[1fr,300px] gap-8">
+          {/* Main Content */}
+          <article className="space-y-6">
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span>{article.category || 'General'}</span>
+                <span>•</span>
+                <time dateTime={article.created_at}>
+                  {new Date(article.created_at).toLocaleDateString()}
+                </time>
+              </div>
+              <h1 className="text-4xl font-bold">{article.title}</h1>
+            </div>
+
+            <VideoPlayer src={article.video_url} />
+
+            <div className="prose prose-gray max-w-none">
+              <div dangerouslySetInnerHTML={{ __html: article.summary }} />
+            </div>
+
+            {/* Engagement Section */}
+            <div className="flex items-center gap-4 text-sm text-muted-foreground border-t pt-4">
+              <EngagementButtons
+                newsId={article.id}
+                initialLikes={article.likes.length}
+                initialShares={article.shares.length}
+                content_type="video"
+                url="https://daily-news-5k66.onrender.com/news/video"
+              />
+
+              <button
+                onClick={() => setShowComments(true)}
+                className="flex items-center gap-1 hover:text-primary transition-colors"
+              >
+                <span className="flex items-center gap-1">
+                  <MessageCircle /> {article.comments.length}
+                </span>
+              </button>
+            </div>
+            <div className="flex items-center gap-4 pt-6">
+              <Link
+                href="/web9/allnews"
+                className="text-primary hover:underline"
+              >
+                &larr; Back to News
+              </Link>
+            </div>
+          </article>
+
+          {showComments && (
+            <CommentsModal
+              url={`https://daily-news-5k66.onrender.com/news/video/${article.id}/comment/`}
+              newsId={article.id}
+              initialComments={article.comments}
+              onClose={() => setShowComments(false)}
+            />
+          )}
+
+          {/* Sidebar */}
+          <div className="space-y-8">
+            {/* Advertisement Section */}
+            <section className="border rounded-lg p-4">
+              <h3 className="font-bold mb-4">Advertisement</h3>
+              <div className="bg-muted aspect-square flex items-center justify-center">
+                <Image
+                  src="/icecream.jpg"
+                  alt="Ad Space"
+                  width={300}
+                  height={300}
+                  className="rounded-lg object-cover"
+                />
+              </div>
+            </section>
+
+            {/* Related Stories */}
+            <section className="border rounded-lg p-4">
+              <h3 className="font-bold mb-4">Related Stories</h3>
+              <div className="space-y-4">
+                <Link href="#" className="block hover:text-primary">
+                  Global Summit Addresses Policy Changes
+                </Link>
+                <Link href="#" className="block hover:text-primary">
+                  Economic Impact of New Policies
+                </Link>
+                <Link href="#" className="block hover:text-primary">
+                  International Response to Development
+                </Link>
+                <Link href="#" className="block hover:text-primary">
+                  Analysis: Long-term Implications
+                </Link>
+                <Link href="#" className="block hover:text-primary">
+                  Expert Commentary on Global Changes
+                </Link>
+              </div>
+            </section>
+
+            {/* Share Article */}
+            <section className="border rounded-lg p-4">
+              <h3 className="font-bold mb-4">Share This Article</h3>
+              <div className="space-y-2">
+                <button className="w-full text-left text-sm text-muted-foreground hover:text-primary">
+                  Share on Twitter
+                </button>
+                <button className="w-full text-left text-sm text-muted-foreground hover:text-primary">
+                  Share on Facebook
+                </button>
+                <button className="w-full text-left text-sm text-muted-foreground hover:text-primary">
+                  Share on LinkedIn
+                </button>
+                <button className="w-full text-left text-sm text-muted-foreground hover:text-primary">
+                  Copy Link
+                </button>
+              </div>
+            </section>
+          </div>
+        </div>
+      </main>
+
+      <GenFooter />
+    </div>
+  );
+}
