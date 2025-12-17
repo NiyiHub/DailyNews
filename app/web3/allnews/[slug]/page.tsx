@@ -4,13 +4,14 @@ import { useEffect, useState } from 'react';
 import GenFooter from '@/components/ui/footer';
 import Header from '@/components/ui/header';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+// import { notFound } from 'next/navigation'; // ❌ REMOVED - causes hydration issues
 import { Button } from '@/components/ui/button';
 import { Play, Pause, Volume2, VolumeX, MessageCircle } from 'lucide-react';
 import VideoPlayer from '@/components/ui/videoplayer';
 import EngagementButtons from '@/components/ui/engagement-buttons';
 import Image from 'next/image';
 import CommentsModal from '@/components/ui/comments-modal';
+import { use } from 'react'; // ✅ ADDED - for unwrapping params
 
 interface VideoArticle {
   id: number;
@@ -35,14 +36,31 @@ interface VideoArticle {
   }>;
 }
 
+// ❌ OLD - params is undefined in Next.js 15+
+// export default function VideoArticlePage({
+//   params,
+// }: {
+//   params: { slug: string };
+// }) {
+
+// ✅ NEW - params is a Promise that needs unwrapping
 export default function VideoArticlePage({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
+  // ✅ Unwrap the params Promise
+  const unwrappedParams = use(params);
+  const slug = unwrappedParams.slug;
+
   const [article, setArticle] = useState<VideoArticle | null>(null);
   const [loading, setLoading] = useState(true);
   const [showComments, setShowComments] = useState(false);
+  const [mounted, setMounted] = useState(false); // ✅ ADDED - for hydration safety
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const fetchArticle = async () => {
@@ -51,10 +69,32 @@ export default function VideoArticlePage({
           'https://daily-news-5k66.onrender.com/news/video/get/'
         );
         const articles: VideoArticle[] = await response.json();
-        const articleId = parseInt(params.slug);
+        
+        console.log('🔍 VIDEO DEBUG:');
+        console.log('slug:', slug);
+        
+        const articleId = parseInt(slug, 10);
+        console.log('Parsed articleId:', articleId);
+        
+        // ✅ ADDED - validate articleId
+        if (isNaN(articleId)) {
+          console.log('❌ ArticleId is NaN');
+          setArticle(null);
+          setLoading(false);
+          return;
+        }
+        
         const foundArticle = articles.find(
           (article) => article.id === articleId
         );
+        
+        if (foundArticle) {
+          console.log('✅ Video article found:', foundArticle.title);
+          console.log('Video URL:', foundArticle.video_url);
+        } else {
+          console.log('❌ No video article with ID:', articleId);
+        }
+        
         setArticle(foundArticle || null);
       } catch (error) {
         console.error('Error fetching article:', error);
@@ -65,14 +105,44 @@ export default function VideoArticlePage({
     };
 
     fetchArticle();
-  }, [params.slug]);
+  }, [slug]); // ✅ Changed dependency from params.slug to slug
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-1 container mx-auto px-4 py-8">
+          <p>Loading video...</p>
+        </main>
+        <GenFooter />
+      </div>
+    );
   }
 
+  // ❌ OLD CODE - causes 404 and hydration issues:
+  // if (!article) {
+  //   notFound();
+  // }
+
+  // ✅ NEW CODE - proper JSX return instead of notFound():
   if (!article) {
-    notFound();
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-1 container mx-auto px-4 py-8">
+          <div className="text-center py-12">
+            <h1 className="text-2xl font-bold mb-4">Video Not Found</h1>
+            <p className="text-muted-foreground mb-6">
+              The video you're looking for doesn't exist.
+            </p>
+            <Link href="/web3/allnews" className="text-primary hover:underline">
+              ← Back to News
+            </Link>
+          </div>
+        </main>
+        <GenFooter />
+      </div>
+    );
   }
 
   return (
@@ -99,31 +169,35 @@ export default function VideoArticlePage({
               <h1 className="text-4xl font-bold">{article.title}</h1>
             </div>
 
+            {/* ✅ VideoPlayer with error handling */}
             <VideoPlayer src={article.video_url} />
 
-            <div className="prose prose-gray max-w-none">
-              <div dangerouslySetInnerHTML={{ __html: article.summary }} />
-            </div>
+            <div 
+              className="prose prose-gray max-w-none"
+              dangerouslySetInnerHTML={{ __html: article.summary }} 
+            />
 
-            {/* Engagement Section */}
-            <div className="flex items-center gap-4 text-sm text-muted-foreground border-t pt-4">
-              <EngagementButtons
-                newsId={article.id}
-                initialLikes={article.likes.length}
-                initialShares={article.shares.length}
-                content_type="video"
-                url="https://daily-news-5k66.onrender.com/news/video"
-              />
+            {/* ✅ ADDED mounted check - prevents hydration issues */}
+            {mounted && (
+              <div className="flex items-center gap-4 text-sm text-muted-foreground border-t pt-4">
+                <EngagementButtons
+                  newsId={article.id}
+                  initialLikes={article.likes.length}
+                  initialShares={article.shares.length}
+                  content_type="video"
+                  url="https://daily-news-5k66.onrender.com/news/video"
+                />
 
-              <button
-                onClick={() => setShowComments(true)}
-                className="flex items-center gap-1 hover:text-primary transition-colors"
-              >
-                <span className="flex items-center gap-1">
-                  <MessageCircle /> {article.comments.length}
-                </span>
-              </button>
-            </div>
+                <button
+                  onClick={() => setShowComments(true)}
+                  className="flex items-center gap-1 hover:text-primary transition-colors"
+                >
+                  <span className="flex items-center gap-1">
+                    <MessageCircle /> {article.comments.length}
+                  </span>
+                </button>
+              </div>
+            )}
 
             <div className="flex items-center gap-4 pt-6">
               <Link
