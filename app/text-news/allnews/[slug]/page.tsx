@@ -160,9 +160,9 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
                 </time>
               </div> */}
               <h1 className="text-4xl font-bold">{article?.title}</h1>
-              <div className="flex items-center gap-2 text-sm">
+              {/* <div className="flex items-center gap-2 text-sm">
                 <span>By Daily News AI</span>
-              </div>
+              </div> */}
             </div>
 
             <div
