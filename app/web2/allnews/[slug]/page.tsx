@@ -5,12 +5,12 @@ import GenFooter from '@/components/ui/footer';
 import Header from '@/components/ui/header';
 import Link from 'next/link';
 import Image from 'next/image';
-// import { notFound } from 'next/navigation'; // ❌ REMOVED - causes hydration issues
 import EngagementButtons from '@/components/ui/engagement-buttons';
 import ReactMarkdown from 'react-markdown';
 import { MessageCircle } from 'lucide-react';
 import CommentsModal from '@/components/ui/comments-modal';
 import IdModal from '@/components/ui/id-modal';
+import { use } from 'react'; // ✅ ADDED - needed for unwrapping params
 
 interface Article {
   id: number;
@@ -24,23 +24,26 @@ interface Article {
   shares: Array<{ id: number; platform: string; created_at: string }>;
 }
 
-export default function ArticlePage({ params }: { params: { slug: string } }) {
+// ❌ OLD - params is a Promise in Next.js 15+
+// export default function ArticlePage({ params }: { params: { slug: string } }) {
+
+// ✅ NEW - params needs to be unwrapped as a Promise
+export default function ArticlePage({ 
+  params 
+}: { 
+  params: Promise<{ slug: string }> 
+}) {
+  // ✅ Unwrap the params Promise
+  const unwrappedParams = use(params);
+  const slug = unwrappedParams.slug;
+
   const [article, setArticle] = useState<Article | null>(null);
   const [loading, setLoading] = useState(true);
   const [showComments, setShowComments] = useState(false);
   const [showIdModal, setShowIdModal] = useState(false);
   const [userId, setUserId] = useState('');
-  const [mounted, setMounted] = useState(false); // ✅ ADDED - prevents hydration issues
+  const [mounted, setMounted] = useState(false);
 
-  // ❌ OLD CODE - causes hydration issues:
-  // useEffect(() => {
-  //   const storedId = localStorage.getItem('myId');
-  //   if (storedId) {
-  //     setUserId(storedId);
-  //   }
-  // }, []);
-
-  // ✅ NEW CODE - fixes hydration issues:
   useEffect(() => {
     setMounted(true);
     const storedId = localStorage.getItem('myId');
@@ -49,85 +52,54 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
     }
   }, []);
 
-  // useEffect(() => {
-  //   const fetchArticle = async () => {
-  //     try {
-  //       const response = await fetch(
-  //         'https://daily-news-5k66.onrender.com/news/written-image/get/'
-  //       );
-  //       const articles: Article[] = await response.json();
-  //       const articleId = parseInt(params.slug, 10);
-        
-  //       // ✅ ADDED - validate articleId before searching
-  //       if (isNaN(articleId)) {
-  //         setArticle(null);
-  //         setLoading(false);
-  //         return;
-  //       }
-        
-  //       const foundArticle = articles.find(
-  //         (article) => article.id === articleId
-  //       );
-  //       setArticle(foundArticle || null);
-  //     } catch (error) {
-  //       console.error('Error fetching article:', error);
-  //       setArticle(null);
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   };
-
-  //   fetchArticle();
-  // }, [params.slug]);
-
   useEffect(() => {
-  const fetchArticle = async () => {
-    try {
-      const response = await fetch(
-        'https://daily-news-5k66.onrender.com/news/written-image/get/'
-      );
-      const articles: Article[] = await response.json();
-      
-      console.log('🔍 DEBUG INFO:');
-      console.log('params.slug:', params.slug);
-      console.log('params.slug type:', typeof params.slug);
-      
-      const articleId = parseInt(params.slug, 10);
-      console.log('Parsed articleId:', articleId);
-      console.log('Is NaN?:', isNaN(articleId));
-      
-      console.log('Total articles fetched:', articles.length);
-      console.log('Article IDs:', articles.map(a => a.id));
-      
-      if (isNaN(articleId)) {
-        console.log('❌ ArticleId is NaN');
+    const fetchArticle = async () => {
+      try {
+        const response = await fetch(
+          'https://daily-news-5k66.onrender.com/news/written-image/get/'
+        );
+        const articles: Article[] = await response.json();
+        
+        console.log('🔍 DEBUG INFO:');
+        console.log('slug:', slug);
+        console.log('slug type:', typeof slug);
+        
+        const articleId = parseInt(slug, 10);
+        console.log('Parsed articleId:', articleId);
+        console.log('Is NaN?:', isNaN(articleId));
+        
+        console.log('Total articles fetched:', articles.length);
+        console.log('Article IDs:', articles.map(a => a.id));
+        
+        if (isNaN(articleId)) {
+          console.log('❌ ArticleId is NaN');
+          setArticle(null);
+          setLoading(false);
+          return;
+        }
+        
+        const foundArticle = articles.find(
+          (article) => article.id === articleId
+        );
+        
+        console.log('Found article?:', !!foundArticle);
+        if (foundArticle) {
+          console.log('✅ Article found:', foundArticle.title);
+        } else {
+          console.log('❌ No article with ID:', articleId);
+        }
+        
+        setArticle(foundArticle || null);
+      } catch (error) {
+        console.error('Error fetching article:', error);
         setArticle(null);
+      } finally {
         setLoading(false);
-        return;
       }
-      
-      const foundArticle = articles.find(
-        (article) => article.id === articleId
-      );
-      
-      console.log('Found article?:', !!foundArticle);
-      if (foundArticle) {
-        console.log('✅ Article found:', foundArticle.title);
-      } else {
-        console.log('❌ No article with ID:', articleId);
-      }
-      
-      setArticle(foundArticle || null);
-    } catch (error) {
-      console.error('Error fetching article:', error);
-      setArticle(null);
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
 
-  fetchArticle();
-}, [params.slug]);
+    fetchArticle();
+  }, [slug]); // ✅ Changed dependency from params.slug to slug
 
   const handleCommentsClick = () => {
     if (!userId) {
@@ -137,7 +109,6 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
     }
   };
 
-  // ✅ ADDED - was missing from original code
   const handleIdSubmit = (newId: string) => {
     localStorage.setItem('myId', newId);
     setUserId(newId);
@@ -157,12 +128,6 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
     );
   }
 
-  // ❌ OLD CODE - causes 404 and hydration issues:
-  // if (!article) {
-  //   notFound();
-  // }
-
-  // ✅ NEW CODE - proper JSX return instead of notFound():
   if (!article) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -215,13 +180,11 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
               />
             )}
 
-            {/* ✅ FIXED - removed extra wrapper div to prevent hydration issues */}
             <div 
               className="prose max-w-3xl mx-auto"
               dangerouslySetInnerHTML={{ __html: article.content }} 
             />
 
-            {/* ✅ ADDED mounted check - prevents hydration issues with engagement buttons */}
             {mounted && (
               <div className="flex items-center gap-4 text-sm text-muted-foreground border-t pt-4">
                 <EngagementButtons
@@ -260,10 +223,7 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
             )}
 
             <div className="flex items-center gap-4 pt-6">
-              <Link
-                href="/web2/allnews"
-                className="text-primary hover:underline"
-              >
+              <Link href="/web2/allnews" className="text-primary hover:underline">
                 &larr; Back to News
               </Link>
             </div>
