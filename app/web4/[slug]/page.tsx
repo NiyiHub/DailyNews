@@ -8,10 +8,9 @@ import IdModal from '@/components/ui/id-modal';
 import Modal from '@/components/ui/modal';
 import { MessageCircle } from 'lucide-react';
 import Image from 'next/image';
-// import InfoSec from '@/components/ui/info';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
-import { useEffect, useState } from 'react';
+// import { notFound } from 'next/navigation'; // ❌ REMOVED - causes hydration issues
+import { useEffect, useState, use } from 'react'; // ✅ ADDED 'use' hook
 import ReactMarkdown from 'react-markdown';
 import welcomeModalContent from '@/lib/modal-content';
 import DOMPurify from 'dompurify';
@@ -30,15 +29,37 @@ interface Article {
   shares: Array<{ id: number; platform: string; created_at: string }>;
 }
 
-export default function ArticlePage({ params }: { params: { slug: string } }) {
+// ❌ OLD - params is undefined in Next.js 15+
+// export default function ArticlePage({ params }: { params: { slug: string } }) {
+
+// ✅ NEW - params is a Promise that needs unwrapping
+export default function ArticlePage({ 
+  params 
+}: { 
+  params: Promise<{ slug: string }> 
+}) {
+  // ✅ Unwrap the params Promise
+  const unwrappedParams = use(params);
+  const slug = unwrappedParams.slug;
+
   const [article, setArticle] = useState<Article | null>(null);
   const [showComments, setShowComments] = useState(false);
   const [showIdModal, setShowIdModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [mounted, setMounted] = useState(false); // ✅ ADDED - for hydration safety
+
   useEffect(() => {
+    setMounted(true);
     setIsModalOpen(true);
+  }, []);
+
+  useEffect(() => {
+    const storedId = localStorage.getItem('myId');
+    if (storedId) {
+      setUserId(storedId);
+    }
   }, []);
 
   useEffect(() => {
@@ -48,8 +69,23 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
           'https://daily-news-5k66.onrender.com/news/written/get/'
         );
         if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
-        const articleId = Number.parseInt(params.slug, 10);
+        
+        // ✅ Changed from params.slug to slug
+        const articleId = Number.parseInt(slug, 10);
         const articles: Article[] = await res.json();
+
+        console.log('🔍 DEBUG:');
+        console.log('slug:', slug);
+        console.log('articleId:', articleId);
+        console.log('Is NaN?:', isNaN(articleId));
+
+        // ✅ ADDED - validate articleId
+        if (isNaN(articleId)) {
+          console.log('❌ ArticleId is NaN');
+          setArticle(null);
+          setLoading(false);
+          return;
+        }
 
         // Prefer finding by id; fall back to index if needed
         const found =
@@ -58,6 +94,12 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
           null;
 
         console.log('articleId', articleId, 'found', !!found);
+        if (found) {
+          console.log('✅ Article found:', found.title);
+        } else {
+          console.log('❌ No article with ID:', articleId);
+        }
+        
         setArticle(found);
       } catch (error) {
         console.error('Error fetching article:', error);
@@ -68,7 +110,7 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
     }
 
     fetchArticle();
-  }, [params.slug]);
+  }, [slug]); // ✅ Changed dependency from params.slug to slug
 
   const handleCommentsClick = () => {
     if (!userId) {
@@ -82,7 +124,7 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
     localStorage.setItem('myId', newId);
     setUserId(newId);
     setShowIdModal(false);
-    setShowComments(true); // Show comments modal after ID is submitted
+    setShowComments(true);
   };
 
   if (loading) {
@@ -102,7 +144,15 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
       <div className="min-h-screen flex flex-col">
         <Header />
         <main className="flex-1 container mx-auto px-4 py-8">
-          <p>Article not found</p>
+          <div className="text-center py-12">
+            <h1 className="text-2xl font-bold mb-4">Article Not Found</h1>
+            <p className="text-muted-foreground mb-6">
+              The article you're looking for doesn't exist.
+            </p>
+            <Link href="/web4/allnews" className="text-primary hover:underline">
+              ← Back to News
+            </Link>
+          </div>
         </main>
         <GenFooter />
       </div>
@@ -112,22 +162,25 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-        <div className="text-center mb-6">
-          <h2 className="text-2xl font-bold mb-2">
-            {welcomeModalContent.brief}
-          </h2>
-          <Image
-            src={welcomeModalContent.image}
-            alt="Daily News"
-            width={200}
-            height={80}
-            className="mx-auto mb-4"
-          />
-        </div>
-        <p className="mb-4">{welcomeModalContent.text}</p>
-        <Button onClick={() => setIsModalOpen(false)}>I understand</Button>
-      </Modal>
+      
+      {mounted && (
+        <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
+          <div className="text-center mb-6">
+            <h2 className="text-2xl font-bold mb-2">
+              {welcomeModalContent.brief}
+            </h2>
+            <Image
+              src={welcomeModalContent.image}
+              alt="Daily News"
+              width={200}
+              height={80}
+              className="mx-auto mb-4"
+            />
+          </div>
+          <p className="mb-4">{welcomeModalContent.text}</p>
+          <Button onClick={() => setIsModalOpen(false)}>I understand</Button>
+        </Modal>
+      )}
 
       <main className="flex-1 container mx-auto px-4 py-8">
         <div className="grid md:grid-cols-[1fr,300px] gap-8">
@@ -162,23 +215,25 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
               }}
             />
 
-            {/* Add engagement section */}
-            <div className="flex items-center gap-4 text-sm text-muted-foreground border-t pt-4">
-              <EngagementButtons
-                url={`https://daily-news-5k66.onrender.com/news/written`}
-                newsId={article.id}
-                initialLikes={article.likes.length}
-                initialShares={article.shares.length}
-              />
-              <button
-                onClick={() => setShowComments(true)}
-                className="flex items-center gap-1 hover:text-primary transition-colors"
-              >
-                <span className="flex items-center gap-1">
-                  <MessageCircle /> {article.comments.length}
-                </span>
-              </button>
-            </div>
+            {/* ✅ ADDED mounted check - prevents hydration issues */}
+            {mounted && (
+              <div className="flex items-center gap-4 text-sm text-muted-foreground border-t pt-4">
+                <EngagementButtons
+                  url={`https://daily-news-5k66.onrender.com/news/written`}
+                  newsId={article.id}
+                  initialLikes={article.likes.length}
+                  initialShares={article.shares.length}
+                />
+                <button
+                  onClick={handleCommentsClick}
+                  className="flex items-center gap-1 hover:text-primary transition-colors"
+                >
+                  <span className="flex items-center gap-1">
+                    <MessageCircle /> {article.comments.length}
+                  </span>
+                </button>
+              </div>
+            )}
 
             {showComments && article && (
               <CommentsModal
@@ -213,7 +268,6 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
             <section className="border rounded-lg p-4">
               <h3 className="font-bold mb-4">Advertisement</h3>
               <div className="bg-muted aspect-square flex items-center justify-center">
-                {/* <span className="text-muted-foreground">Ad Space</span> */}
                 <Image
                   src="/book.jpg"
                   alt="Ad Space"
