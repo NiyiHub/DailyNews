@@ -68,9 +68,17 @@ export default async function NewsPage() {
                         {item.title}
                       </Link>
                     </h2>
+                    {/* ❌ OLD CODE - extra wrapper div can cause hydration issues:
                     <div className="prose max-w-3xl mx-auto">
                       <div dangerouslySetInnerHTML={{ __html: item.content.substring(0, 300) }} />
                     </div>
+                    */}
+                    
+                    {/* ✅ NEW CODE - removed extra wrapper to prevent hydration issues */}
+                    <div 
+                      className="prose max-w-3xl mx-auto mb-4"
+                      dangerouslySetInnerHTML={{ __html: item.content.substring(0, 300) + '...' }} 
+                    />
                     <Link
                       href={`/web2/allnews/${item.id}`}
                       className="text-primary hover:underline"

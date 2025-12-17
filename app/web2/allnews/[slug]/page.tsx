@@ -5,7 +5,7 @@ import GenFooter from '@/components/ui/footer';
 import Header from '@/components/ui/header';
 import Link from 'next/link';
 import Image from 'next/image';
-import { notFound } from 'next/navigation';
+// import { notFound } from 'next/navigation'; // ❌ REMOVED - causes hydration issues
 import EngagementButtons from '@/components/ui/engagement-buttons';
 import ReactMarkdown from 'react-markdown';
 import { MessageCircle } from 'lucide-react';
@@ -30,8 +30,19 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
   const [showComments, setShowComments] = useState(false);
   const [showIdModal, setShowIdModal] = useState(false);
   const [userId, setUserId] = useState('');
+  const [mounted, setMounted] = useState(false); // ✅ ADDED - prevents hydration issues
 
+  // ❌ OLD CODE - causes hydration issues:
+  // useEffect(() => {
+  //   const storedId = localStorage.getItem('myId');
+  //   if (storedId) {
+  //     setUserId(storedId);
+  //   }
+  // }, []);
+
+  // ✅ NEW CODE - fixes hydration issues:
   useEffect(() => {
+    setMounted(true);
     const storedId = localStorage.getItem('myId');
     if (storedId) {
       setUserId(storedId);
@@ -45,7 +56,15 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
           'https://daily-news-5k66.onrender.com/news/written-image/get/'
         );
         const articles: Article[] = await response.json();
-        const articleId = parseInt(params.slug);
+        const articleId = parseInt(params.slug, 10);
+        
+        // ✅ ADDED - validate articleId before searching
+        if (isNaN(articleId)) {
+          setArticle(null);
+          setLoading(false);
+          return;
+        }
+        
         const foundArticle = articles.find(
           (article) => article.id === articleId
         );
@@ -61,14 +80,6 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
     fetchArticle();
   }, [params.slug]);
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-
-  if (!article) {
-    notFound();
-  }
-
   const handleCommentsClick = () => {
     if (!userId) {
       setShowIdModal(true);
@@ -76,6 +87,52 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
       setShowComments(true);
     }
   };
+
+  // ✅ ADDED - was missing from original code
+  const handleIdSubmit = (newId: string) => {
+    localStorage.setItem('myId', newId);
+    setUserId(newId);
+    setShowIdModal(false);
+    setShowComments(true);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-1 container mx-auto px-4 py-8">
+          <p>Loading...</p>
+        </main>
+        <GenFooter />
+      </div>
+    );
+  }
+
+  // ❌ OLD CODE - causes 404 and hydration issues:
+  // if (!article) {
+  //   notFound();
+  // }
+
+  // ✅ NEW CODE - proper JSX return instead of notFound():
+  if (!article) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-1 container mx-auto px-4 py-8">
+          <div className="text-center py-12">
+            <h1 className="text-2xl font-bold mb-4">Article Not Found</h1>
+            <p className="text-muted-foreground mb-6">
+              The article you're looking for doesn't exist.
+            </p>
+            <Link href="/web2/allnews" className="text-primary hover:underline">
+              ← Back to News
+            </Link>
+          </div>
+        </main>
+        <GenFooter />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -109,28 +166,32 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
               />
             )}
 
-            <div className="prose max-w-3xl mx-auto">
-              <div dangerouslySetInnerHTML={{ __html: article.content }} />
-            </div>
+            {/* ✅ FIXED - removed extra wrapper div to prevent hydration issues */}
+            <div 
+              className="prose max-w-3xl mx-auto"
+              dangerouslySetInnerHTML={{ __html: article.content }} 
+            />
 
-            {/* Engagement Section. */}
-            <div className="flex items-center gap-4 text-sm text-muted-foreground border-t pt-4">
-              <EngagementButtons
-                url={`https://daily-news-5k66.onrender.com/news/written-image`}
-                newsId={article.id}
-                initialLikes={article.likes.length}
-                initialShares={article.shares.length}
-                content_type="written-image"
-              />
-              <button
-                onClick={() => setShowComments(true)}
-                className="flex items-center gap-1 hover:text-primary transition-colors"
-              >
-                <span className="flex items-center gap-1">
-                  <MessageCircle /> {article.comments.length}
-                </span>
-              </button>
-            </div>
+            {/* ✅ ADDED mounted check - prevents hydration issues with engagement buttons */}
+            {mounted && (
+              <div className="flex items-center gap-4 text-sm text-muted-foreground border-t pt-4">
+                <EngagementButtons
+                  url={`https://daily-news-5k66.onrender.com/news/written-image`}
+                  newsId={article.id}
+                  initialLikes={article.likes.length}
+                  initialShares={article.shares.length}
+                  content_type="written-image"
+                />
+                <button
+                  onClick={handleCommentsClick}
+                  className="flex items-center gap-1 hover:text-primary transition-colors"
+                >
+                  <span className="flex items-center gap-1">
+                    <MessageCircle /> {article.comments.length}
+                  </span>
+                </button>
+              </div>
+            )}
 
             {showComments && (
               <CommentsModal
@@ -138,6 +199,14 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
                 newsId={article.id}
                 initialComments={article.comments}
                 onClose={() => setShowComments(false)}
+              />
+            )}
+
+            {showIdModal && (
+              <IdModal
+                isOpen={showIdModal}
+                onClose={() => setShowIdModal(false)}
+                onSubmit={handleIdSubmit}
               />
             )}
 
