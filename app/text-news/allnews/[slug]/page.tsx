@@ -3,8 +3,7 @@
 import GenFooter from '@/components/ui/footer';
 import Header from '@/components/ui/header';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import EngagementButtons from '@/components/ui/engagement-buttons';
 import CommentsModal from '@/components/ui/comments-modal';
 import Image from 'next/image';
@@ -16,7 +15,6 @@ import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import DOMPurify from 'dompurify';
 
-// Update the interface to include engagement fields
 interface Article {
   id: number;
   title: string;
@@ -30,12 +28,26 @@ interface Article {
   shares: Array<{ id: number; platform: string; created_at: string }>;
 }
 
-export default function ArticlePage({ params }: { params: { slug: string } }) {
+// ✅ FIXED: params is a Promise in Next.js 15+
+export default function ArticlePage({ 
+  params 
+}: { 
+  params: Promise<{ slug: string }> 
+}) {
+  // ✅ Unwrap the params Promise
+  const unwrappedParams = use(params);
+  const slug = unwrappedParams.slug;
+
   const [article, setArticle] = useState<Article | null>(null);
   const [showComments, setShowComments] = useState(false);
   const [showIdModal, setShowIdModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState('');
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const storedId = localStorage.getItem('myId');
@@ -44,60 +56,55 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
     }
   }, []);
 
-  // useEffect(() => {
-  //   async function fetchArticle() {
-  //     try {
-  //       const res = await fetch(
-  //         'https://daily-news-5k66.onrender.com/news/written/get/'
-  //       );
-  //       if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
-  //       const articleId = Number.parseInt(params.slug, 10);
-  //       const articles: Article[] = await res.json();
-
-  //       // Prefer finding by id; fall back to index if needed
-  //       const found =
-  //         articles.find((a) => a.id === articleId) ||
-  //         articles[articleId - 1] ||
-  //         null;
-
-  //       console.log('articleId', articleId, 'found', !!found);
-  //       setArticle(found);
-  //     } catch (error) {
-  //       console.error('Error fetching article:', error);
-  //       setArticle(null);
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   }
-
-  //   fetchArticle();
-  // }, [params.slug]);
-
   useEffect(() => {
-  async function fetchArticle() {
-    try {
-      const res = await fetch(
-        'https://daily-news-5k66.onrender.com/news/written/get/'
-      );
-      if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
-      
-      const articles: Article[] = await res.json();
-      
-      // Find by slug instead of ID
-      const found = articles.find((a) => a.slug === params.slug);
-      
-      console.log('slug', params.slug, 'found', !!found);
-      setArticle(found || null);
-    } catch (error) {
-      console.error('Error fetching article:', error);
-      setArticle(null);
-    } finally {
-      setLoading(false);
-    }
-  }
+    async function fetchArticle() {
+      try {
+        const res = await fetch(
+          'https://daily-news-5k66.onrender.com/news/written/get/'
+        );
+        
+        if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
+        
+        const articles: Article[] = await res.json();
 
-  fetchArticle();
-}, [params.slug]);
+        console.log('🔍 TEXT-NEWS DEBUG:');
+        console.log('slug from URL:', slug);
+        console.log('slug type:', typeof slug);
+        console.log('All articles:', articles.map(a => ({ id: a.id, title: a.title })));
+        
+        const articleId = Number.parseInt(slug, 10);
+        console.log('Parsed articleId:', articleId);
+        console.log('Is NaN?:', isNaN(articleId));
+
+        // ✅ CRITICAL FIX: Only find by ID, NO array index fallback
+        if (isNaN(articleId)) {
+          console.log('❌ Invalid article ID');
+          setArticle(null);
+          setLoading(false);
+          return;
+        }
+
+        // ✅ ONLY use .find() by ID - removed the fallback that caused wrong articles
+        const found = articles.find((a) => a.id === articleId);
+
+        if (found) {
+          console.log('✅ Article found:', found.title, 'ID:', found.id);
+        } else {
+          console.log('❌ No article with ID:', articleId);
+          console.log('Available article IDs:', articles.map(a => a.id));
+        }
+
+        setArticle(found || null);
+      } catch (error) {
+        console.error('Error fetching article:', error);
+        setArticle(null);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchArticle();
+  }, [slug]); // ✅ Dependency on slug to refetch when URL changes
 
   const handleCommentsClick = () => {
     if (!userId) {
@@ -111,7 +118,7 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
     localStorage.setItem('myId', newId);
     setUserId(newId);
     setShowIdModal(false);
-    setShowComments(true); // Show comments modal after ID is submitted
+    setShowComments(true);
   };
 
   if (loading) {
@@ -119,7 +126,9 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
       <div className="min-h-screen flex flex-col">
         <Header />
         <main className="flex-1 container mx-auto px-4 py-8">
-          <p>Loading article...</p>
+          <div className="flex items-center justify-center py-12">
+            <p className="text-lg">Loading article...</p>
+          </div>
         </main>
         <GenFooter />
       </div>
@@ -131,7 +140,15 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
       <div className="min-h-screen flex flex-col">
         <Header />
         <main className="flex-1 container mx-auto px-4 py-8">
-          <p>Article not found</p>
+          <div className="text-center py-12">
+            <h1 className="text-2xl font-bold mb-4">Article Not Found</h1>
+            <p className="text-muted-foreground mb-6">
+              The article you're looking for doesn't exist.
+            </p>
+            <Link href="/text-news/allnews" className="text-primary hover:underline">
+              ← Back to News
+            </Link>
+          </div>
         </main>
         <GenFooter />
       </div>
@@ -152,17 +169,10 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
               </Link>
             </div>
             <div className="space-y-4">
-              {/* <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <span>{article.category || 'General'}</span>
-                <span>•</span>
-                <time dateTime={article.created_at}>
-                  {new Date(article.created_at).toLocaleDateString()}
-                </time>
-              </div> */}
               <h1 className="text-4xl font-bold">{article?.title}</h1>
-              {/* <div className="flex items-center gap-2 text-sm">
+              <div className="flex items-center gap-2 text-sm">
                 <span>By Daily News AI</span>
-              </div> */}
+              </div>
             </div>
 
             <div
@@ -172,8 +182,7 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
               }}
             />
 
-            {/* Add engagement section */}
-            {article && (
+            {mounted && article && (
               <div className="flex items-center gap-4 text-sm text-muted-foreground border-t pt-4">
                 <EngagementButtons
                   url={`https://daily-news-5k66.onrender.com/news/written`}
@@ -210,7 +219,7 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
             )}
 
             <div className="flex items-center gap-4 pt-6">
-              <Link href="/text-news" className="text-primary hover:underline">
+              <Link href="/text-news/allnews" className="text-primary hover:underline">
                 &larr; Back to News
               </Link>
             </div>
@@ -222,7 +231,6 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
             <section className="border rounded-lg p-4">
               <h3 className="font-bold mb-4">Advertisement</h3>
               <div className="bg-muted aspect-square flex items-center justify-center">
-                {/* <span className="text-muted-foreground">Ad Space</span> */}
                 <Image
                   src="/book.jpg"
                   alt="Ad Space"
