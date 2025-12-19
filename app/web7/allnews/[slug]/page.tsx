@@ -8,13 +8,10 @@ import IdModal from '@/components/ui/id-modal';
 import Modal from '@/components/ui/modal';
 import { MessageCircle } from 'lucide-react';
 import Image from 'next/image';
-// import InfoSec from '@/components/ui/info';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, use } from 'react'; // ✅ Added 'use'
 import ReactMarkdown from 'react-markdown';
 
-// Update the interface to include engagement fields
 interface Article {
   id: number;
   title: string;
@@ -41,9 +38,20 @@ interface Evidence {
 
 interface EvidenceResponse {
   evidence: Evidence;
+  fact_check_status?: string;
+  has_evidence?: boolean;
 }
 
-export default function ArticlePage({ params }: { params: { slug: string } }) {
+// ✅ FIXED: Params is a Promise in Next.js 15+
+export default function ArticlePage({ 
+  params 
+}: { 
+  params: Promise<{ slug: string }> 
+}) {
+  // ✅ Unwrap params
+  const unwrappedParams = use(params);
+  const slug = unwrappedParams.slug;
+
   const [article, setArticle] = useState<Article | null>(null);
   const [showComments, setShowComments] = useState(false);
   const [showIdModal, setShowIdModal] = useState(false);
@@ -51,37 +59,54 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
   const [userId, setUserId] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [evidence, setEvidence] = useState<Evidence | null>(null);
+  const [evidenceLoading, setEvidenceLoading] = useState(false);
+  const [mounted, setMounted] = useState(false); // ✅ Hydration safety
 
   useEffect(() => {
-    setIsModalOpen(true);
+    setMounted(true);
   }, []);
 
   useEffect(() => {
-    const fetchEvidence = async () => {
-      try {
-        const response = await fetch(
-          `https://daily-news-5k66.onrender.com/process/published/${params.slug}/evidence/`
-        );
-        const data: EvidenceResponse = await response.json();
-        setEvidence(data.evidence);
-        setIsModalOpen(true);
-      } catch (error) {
-        console.error('Error fetching evidence:', error);
-      }
-    };
+    const storedId = localStorage.getItem('myId');
+    if (storedId) {
+      setUserId(storedId);
+    }
+  }, []);
 
-    fetchEvidence();
-  }, [params.slug]);
-
+  // ✅ FIXED: Fetch article FIRST
   useEffect(() => {
     async function fetchArticle() {
       try {
         const response = await fetch(
           'https://daily-news-5k66.onrender.com/news/written/get/'
         );
+        
+        if (!response.ok) throw new Error(`Fetch failed: ${response.status}`);
+        
         const articles: Article[] = await response.json();
-        const articleId = parseInt(params.slug);
-        const foundArticle = articles[articleId - 1];
+        const articleId = parseInt(slug, 10);
+
+        console.log('🔍 WEB7 DEBUG - Article Fetch:');
+        console.log('Slug:', slug);
+        console.log('Parsed ID:', articleId);
+        console.log('Available articles:', articles.map(a => ({ id: a.id, title: a.title })));
+
+        if (isNaN(articleId)) {
+          console.log('❌ Invalid article ID');
+          setArticle(null);
+          setLoading(false);
+          return;
+        }
+
+        // ✅ CRITICAL FIX: Only use .find(), NO array index fallback
+        const foundArticle = articles.find((a) => a.id === articleId);
+
+        if (foundArticle) {
+          console.log('✅ Article found:', foundArticle.title, 'ID:', foundArticle.id);
+        } else {
+          console.log('❌ No article with ID:', articleId);
+        }
+
         setArticle(foundArticle || null);
       } catch (error) {
         console.error('Error fetching article:', error);
@@ -92,7 +117,58 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
     }
 
     fetchArticle();
-  }, [params.slug]);
+  }, [slug]);
+
+  // ✅ FIXED: Fetch evidence AFTER article loads, using article.id
+  useEffect(() => {
+    if (!article || loading) return;
+
+    const fetchEvidence = async () => {
+      try {
+        setEvidenceLoading(true);
+
+        console.log('🔍 WEB7 DEBUG - Evidence Fetch:');
+        console.log('Fetching evidence for article ID:', article.id);
+
+        // ✅ FIXED: Use new endpoint with article.id
+        const response = await fetch(
+          `https://daily-news-5k66.onrender.com/process/news/${article.id}/evidence/`
+        );
+
+        console.log('Evidence response status:', response.status);
+
+        if (response.status === 404) {
+          console.log('ℹ️ No evidence available (404)');
+          setEvidence(null);
+          setEvidenceLoading(false);
+          return;
+        }
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch evidence: ${response.status}`);
+        }
+
+        const data: EvidenceResponse = await response.json();
+        console.log('Evidence data:', data);
+
+        if (data.evidence && Object.keys(data.evidence).length > 0) {
+          setEvidence(data.evidence);
+          setIsModalOpen(true);
+          console.log('✅ Evidence loaded, opening modal');
+        } else {
+          console.log('⚠️ Empty evidence object');
+          setEvidence(null);
+        }
+      } catch (error) {
+        console.error('Error fetching evidence:', error);
+        setEvidence(null);
+      } finally {
+        setEvidenceLoading(false);
+      }
+    };
+
+    fetchEvidence();
+  }, [article, loading]);
 
   const handleCommentsClick = () => {
     if (!userId) {
@@ -106,27 +182,51 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
     localStorage.setItem('myId', newId);
     setUserId(newId);
     setShowIdModal(false);
-    setShowComments(true); // Show comments modal after ID is submitted
+    setShowComments(true);
   };
 
   if (loading) {
     return (
-      <div>
-        <p>Loading...</p>
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-1 container mx-auto px-4 py-8">
+          <div className="flex items-center justify-center py-12">
+            <p className="text-lg">Loading article...</p>
+          </div>
+        </main>
+        <GenFooter />
       </div>
     );
   }
 
+  // ✅ FIXED: Proper JSX return instead of notFound()
   if (!article) {
-    notFound();
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-1 container mx-auto px-4 py-8">
+          <div className="text-center py-12">
+            <h1 className="text-2xl font-bold mb-4">Article Not Found</h1>
+            <p className="text-muted-foreground mb-6">
+              The article you're looking for doesn't exist.
+            </p>
+            <Link href="/web7/allnews" className="text-primary hover:underline">
+              ← Back to News
+            </Link>
+          </div>
+        </main>
+        <GenFooter />
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
 
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-        {evidence ? (
+      {/* ✅ FIXED: Only render modal if evidence exists */}
+      {mounted && evidence && (
+        <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
           <div className="space-y-4">
             <h2 className="text-xl font-bold mb-4">Article Evidence</h2>
 
@@ -138,7 +238,7 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
                 rel="noopener noreferrer"
                 className="text-primary hover:underline"
               >
-                Original Article
+                View Original Source
               </a>
             </div>
 
@@ -162,7 +262,7 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
               </span>
             </div>
 
-            {evidence.supporting_documents.length > 0 && (
+            {evidence.supporting_documents && evidence.supporting_documents.length > 0 && (
               <div>
                 <p className="font-semibold mb-2">Supporting Documents:</p>
                 <ul className="space-y-2">
@@ -182,26 +282,21 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
               </div>
             )}
           </div>
-        ) : (
-          <p>Loading evidence...</p>
-        )}
-        <div className="mt-6">
-          <Button onClick={() => setIsModalOpen(false)}>Close</Button>
-        </div>
-      </Modal>
+          <div className="mt-6">
+            <Button onClick={() => setIsModalOpen(false)}>Close</Button>
+          </div>
+        </Modal>
+      )}
 
       <main className="flex-1 container mx-auto px-4 py-8">
         <div className="grid md:grid-cols-[1fr,300px] gap-8">
-          {/* Main Content */}
           <article className="space-y-6">
             <div className="flex items-center gap-4 pt-6">
-              <Link
-                href="/web7/allnews"
-                className="text-primary hover:underline"
-              >
+              <Link href="/web7/allnews" className="text-primary hover:underline">
                 &larr; Back to News
               </Link>
             </div>
+
             <div className="space-y-4">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <span>{article.category}</span>
@@ -216,27 +311,60 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
               </div>
             </div>
 
+            {/* ✅ Evidence status indicator */}
+            {mounted && !evidenceLoading && (
+              <div className={`p-4 rounded-lg border ${
+                evidence 
+                  ? 'bg-green-50 border-green-200' 
+                  : 'bg-gray-50 border-gray-200'
+              }`}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-semibold">
+                      {evidence ? '✓ Fact-Checked' : 'ℹ️ Not Yet Verified'}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {evidence 
+                        ? 'This article has been fact-checked with evidence.' 
+                        : 'This article has not been independently verified yet.'}
+                    </p>
+                  </div>
+                  {evidence && (
+                    <Button 
+                      onClick={() => setIsModalOpen(true)}
+                      variant="outline"
+                      size="sm"
+                    >
+                      View Evidence
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
+
             <div className="prose prose-gray max-w-none">
               <div dangerouslySetInnerHTML={{ __html: article.content }} />
             </div>
 
-            {/* Add engagement section */}
-            <div className="flex items-center gap-4 text-sm text-muted-foreground border-t pt-4">
-              <EngagementButtons
-                url={`https://daily-news-5k66.onrender.com/news/written`}
-                newsId={article.id}
-                initialLikes={article.likes.length}
-                initialShares={article.shares.length}
-              />
-              <button
-                onClick={() => setShowComments(true)}
-                className="flex items-center gap-1 hover:text-primary transition-colors"
-              >
-                <span className="flex items-center gap-1">
-                  <MessageCircle /> {article.comments.length}
-                </span>
-              </button>
-            </div>
+            {/* ✅ Hydration-safe engagement buttons */}
+            {mounted && (
+              <div className="flex items-center gap-4 text-sm text-muted-foreground border-t pt-4">
+                <EngagementButtons
+                  url={`https://daily-news-5k66.onrender.com/news/written`}
+                  newsId={article.id}
+                  initialLikes={article.likes.length}
+                  initialShares={article.shares.length}
+                />
+                <button
+                  onClick={handleCommentsClick}
+                  className="flex items-center gap-1 hover:text-primary transition-colors"
+                >
+                  <span className="flex items-center gap-1">
+                    <MessageCircle /> {article.comments.length}
+                  </span>
+                </button>
+              </div>
+            )}
 
             {showComments && (
               <CommentsModal
@@ -256,22 +384,16 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
             )}
 
             <div className="flex items-center gap-4 pt-6">
-              <Link
-                href="/web7/allnews"
-                className="text-primary hover:underline"
-              >
+              <Link href="/web7/allnews" className="text-primary hover:underline">
                 &larr; Back to News
               </Link>
             </div>
           </article>
 
-          {/* Sidebar */}
           <div className="space-y-8">
-            {/* Advertisement Section */}
             <section className="border rounded-lg p-4">
               <h3 className="font-bold mb-4">Advertisement</h3>
               <div className="bg-muted aspect-square flex items-center justify-center">
-                {/* <span className="text-muted-foreground">Ad Space</span> */}
                 <Image
                   src="/book.jpg"
                   alt="Ad Space"
@@ -282,7 +404,6 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
               </div>
             </section>
 
-            {/* Related Stories */}
             <section className="border rounded-lg p-4">
               <h3 className="font-bold mb-4">Related Stories</h3>
               <div className="space-y-4">
@@ -304,7 +425,6 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
               </div>
             </section>
 
-            {/* Share Article */}
             <section className="border rounded-lg p-4">
               <h3 className="font-bold mb-4">Share This Article</h3>
               <div className="space-y-2">

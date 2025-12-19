@@ -1,16 +1,16 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, use } from 'react'; // ✅ Added 'use'
 import GenFooter from '@/components/ui/footer';
 import Header from '@/components/ui/header';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Play, Pause, Volume2, VolumeX, MessageCircle } from 'lucide-react';
 import VideoPlayer from '@/components/ui/videoplayer';
 import EngagementButtons from '@/components/ui/engagement-buttons';
 import Image from 'next/image';
 import CommentsModal from '@/components/ui/comments-modal';
+import IdModal from '@/components/ui/id-modal';
 import Modal from '@/components/ui/modal';
 
 interface VideoArticle {
@@ -49,39 +49,39 @@ interface Evidence {
 
 interface EvidenceResponse {
   evidence: Evidence;
+  fact_check_status?: string;
+  has_evidence?: boolean;
 }
 
+// ✅ FIXED: Params is a Promise
 export default function VideoArticlePage({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
+  const unwrappedParams = use(params);
+  const slug = unwrappedParams.slug;
+
   const [article, setArticle] = useState<VideoArticle | null>(null);
   const [loading, setLoading] = useState(true);
   const [showComments, setShowComments] = useState(false);
+  const [showIdModal, setShowIdModal] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [evidence, setEvidence] = useState<Evidence | null>(null);
+  const [evidenceLoading, setEvidenceLoading] = useState(false);
+  const [userId, setUserId] = useState('');
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setIsModalOpen(true);
+    setMounted(true);
   }, []);
 
   useEffect(() => {
-    const fetchEvidence = async () => {
-      try {
-        const response = await fetch(
-          `https://daily-news-5k66.onrender.com/process/published/${params.slug}/evidence/`
-        );
-        const data: EvidenceResponse = await response.json();
-        setEvidence(data.evidence);
-        setIsModalOpen(true);
-      } catch (error) {
-        console.error('Error fetching evidence:', error);
-      }
-    };
-
-    fetchEvidence();
-  }, [params.slug]);
+    const storedId = localStorage.getItem('myId');
+    if (storedId) {
+      setUserId(storedId);
+    }
+  }, []);
 
   useEffect(() => {
     const fetchArticle = async () => {
@@ -89,11 +89,30 @@ export default function VideoArticlePage({
         const response = await fetch(
           'https://daily-news-5k66.onrender.com/news/video/get/'
         );
+        
+        if (!response.ok) throw new Error(`Fetch failed: ${response.status}`);
+        
         const articles: VideoArticle[] = await response.json();
-        const articleId = parseInt(params.slug);
-        const foundArticle = articles.find(
-          (article) => article.id === articleId
-        );
+        const articleId = parseInt(slug, 10);
+
+        console.log('🔍 WEB9 DEBUG - Article Fetch:');
+        console.log('Slug:', slug);
+        console.log('Parsed ID:', articleId);
+
+        if (isNaN(articleId)) {
+          setArticle(null);
+          setLoading(false);
+          return;
+        }
+
+        const foundArticle = articles.find((article) => article.id === articleId);
+
+        if (foundArticle) {
+          console.log('✅ Video article found:', foundArticle.title);
+        } else {
+          console.log('❌ No video article with ID:', articleId);
+        }
+
         setArticle(foundArticle || null);
       } catch (error) {
         console.error('Error fetching article:', error);
@@ -104,22 +123,110 @@ export default function VideoArticlePage({
     };
 
     fetchArticle();
-  }, [params.slug]);
+  }, [slug]);
+
+  // ✅ FIXED: Fetch evidence after article loads
+  useEffect(() => {
+    if (!article || loading) return;
+
+    const fetchEvidence = async () => {
+      try {
+        setEvidenceLoading(true);
+
+        console.log('🔍 WEB9 DEBUG - Evidence Fetch:');
+        console.log('Fetching for video ID:', article.id);
+
+        // ✅ FIXED: Use correct endpoint
+        const response = await fetch(
+          `https://daily-news-5k66.onrender.com/process/news/${article.id}/evidence/`
+        );
+
+        if (response.status === 404) {
+          console.log('ℹ️ No evidence available');
+          setEvidence(null);
+          setEvidenceLoading(false);
+          return;
+        }
+
+        if (!response.ok) {
+          throw new Error(`Failed: ${response.status}`);
+        }
+
+        const data: EvidenceResponse = await response.json();
+
+        if (data.evidence && Object.keys(data.evidence).length > 0) {
+          setEvidence(data.evidence);
+          setIsModalOpen(true);
+          console.log('✅ Evidence loaded');
+        } else {
+          setEvidence(null);
+        }
+      } catch (error) {
+        console.error('Error fetching evidence:', error);
+        setEvidence(null);
+      } finally {
+        setEvidenceLoading(false);
+      }
+    };
+
+    fetchEvidence();
+  }, [article, loading]);
+
+  const handleCommentsClick = () => {
+    if (!userId) {
+      setShowIdModal(true);
+    } else {
+      setShowComments(true);
+    }
+  };
+
+  const handleIdSubmit = (newId: string) => {
+    localStorage.setItem('myId', newId);
+    setUserId(newId);
+    setShowIdModal(false);
+    setShowComments(true);
+  };
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-1 container mx-auto px-4 py-8">
+          <div className="flex items-center justify-center py-12">
+            <p className="text-lg">Loading video...</p>
+          </div>
+        </main>
+        <GenFooter />
+      </div>
+    );
   }
 
   if (!article) {
-    notFound();
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-1 container mx-auto px-4 py-8">
+          <div className="text-center py-12">
+            <h1 className="text-2xl font-bold mb-4">Video Not Found</h1>
+            <p className="text-muted-foreground mb-6">
+              The video you're looking for doesn't exist.
+            </p>
+            <Link href="/web9/allnews" className="text-primary hover:underline">
+              ← Back to News
+            </Link>
+          </div>
+        </main>
+        <GenFooter />
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
 
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-        {evidence ? (
+      {mounted && evidence && (
+        <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
           <div className="space-y-4">
             <h2 className="text-xl font-bold mb-4">Article Evidence</h2>
             
@@ -131,7 +238,7 @@ export default function VideoArticlePage({
                 rel="noopener noreferrer"
                 className="text-primary hover:underline"
               >
-                Original Article
+                View Original Source
               </a>
             </div>
 
@@ -153,7 +260,7 @@ export default function VideoArticlePage({
               </span>
             </div>
 
-            {evidence.supporting_documents.length > 0 && (
+            {evidence.supporting_documents && evidence.supporting_documents.length > 0 && (
               <div>
                 <p className="font-semibold mb-2">Supporting Documents:</p>
                 <ul className="space-y-2">
@@ -173,13 +280,11 @@ export default function VideoArticlePage({
               </div>
             )}
           </div>
-        ) : (
-          <p>Loading evidence...</p>
-        )}
-        <div className="mt-6">
-          <Button onClick={() => setIsModalOpen(false)}>Close</Button>
-        </div>
-      </Modal>
+          <div className="mt-6">
+            <Button onClick={() => setIsModalOpen(false)}>Close</Button>
+          </div>
+        </Modal>
+      )}
 
       <main className="flex-1 container mx-auto px-4 py-8">
         <div className="flex items-center gap-4 pb-6">
@@ -187,8 +292,8 @@ export default function VideoArticlePage({
             &larr; Back to News
           </Link>
         </div>
+
         <div className="grid md:grid-cols-[1fr,300px] gap-8">
-          {/* Main Content */}
           <article className="space-y-6">
             <div className="space-y-4">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -201,53 +306,87 @@ export default function VideoArticlePage({
               <h1 className="text-4xl font-bold">{article.title}</h1>
             </div>
 
+            {/* Evidence indicator */}
+            {mounted && !evidenceLoading && (
+              <div className={`p-4 rounded-lg border ${
+                evidence ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'
+              }`}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-semibold">
+                      {evidence ? '✓ Fact-Checked' : 'ℹ️ Not Yet Verified'}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {evidence 
+                        ? 'This video has been fact-checked.' 
+                        : 'This video has not been verified yet.'}
+                    </p>
+                  </div>
+                  {evidence && (
+                    <Button 
+                      onClick={() => setIsModalOpen(true)}
+                      variant="outline"
+                      size="sm"
+                    >
+                      View Evidence
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
+
             <VideoPlayer src={article.video_url} />
 
             <div className="prose prose-gray max-w-none">
               <div dangerouslySetInnerHTML={{ __html: article.summary }} />
             </div>
 
-            {/* Engagement Section */}
-            <div className="flex items-center gap-4 text-sm text-muted-foreground border-t pt-4">
-              <EngagementButtons
-                newsId={article.id}
-                initialLikes={article.likes.length}
-                initialShares={article.shares.length}
-                content_type="video"
-                url="https://daily-news-5k66.onrender.com/news/video"
-              />
+            {mounted && (
+              <div className="flex items-center gap-4 text-sm text-muted-foreground border-t pt-4">
+                <EngagementButtons
+                  newsId={article.id}
+                  initialLikes={article.likes.length}
+                  initialShares={article.shares.length}
+                  content_type="video"
+                  url="https://daily-news-5k66.onrender.com/news/video"
+                />
 
-              <button
-                onClick={() => setShowComments(true)}
-                className="flex items-center gap-1 hover:text-primary transition-colors"
-              >
-                <span className="flex items-center gap-1">
-                  <MessageCircle /> {article.comments.length}
-                </span>
-              </button>
-            </div>
+                <button
+                  onClick={handleCommentsClick}
+                  className="flex items-center gap-1 hover:text-primary transition-colors"
+                >
+                  <span className="flex items-center gap-1">
+                    <MessageCircle /> {article.comments.length}
+                  </span>
+                </button>
+              </div>
+            )}
+
+            {showComments && (
+              <CommentsModal
+                url={`https://daily-news-5k66.onrender.com/news/video/${article.id}/comment/`}
+                newsId={article.id}
+                initialComments={article.comments}
+                onClose={() => setShowComments(false)}
+              />
+            )}
+
+            {showIdModal && (
+              <IdModal
+                isOpen={showIdModal}
+                onClose={() => setShowIdModal(false)}
+                onSubmit={handleIdSubmit}
+              />
+            )}
+
             <div className="flex items-center gap-4 pt-6">
-              <Link
-                href="/web9/allnews"
-                className="text-primary hover:underline"
-              >
+              <Link href="/web9/allnews" className="text-primary hover:underline">
                 &larr; Back to News
               </Link>
             </div>
           </article>
 
-          {showComments && (
-            <CommentsModal
-              url={`https://daily-news-5k66.onrender.com/news/video/${article.id}/comment/`}
-              newsId={article.id}
-              initialComments={article.comments}
-              onClose={() => setShowComments(false)}
-            />
-          )}
-
-          {/* Sidebar */}
           <div className="space-y-8">
-            {/* Advertisement Section */}
             <section className="border rounded-lg p-4">
               <h3 className="font-bold mb-4">Advertisement</h3>
               <div className="bg-muted aspect-square flex items-center justify-center">
@@ -261,7 +400,6 @@ export default function VideoArticlePage({
               </div>
             </section>
 
-            {/* Related Stories */}
             <section className="border rounded-lg p-4">
               <h3 className="font-bold mb-4">Related Stories</h3>
               <div className="space-y-4">
@@ -283,7 +421,6 @@ export default function VideoArticlePage({
               </div>
             </section>
 
-            {/* Share Article */}
             <section className="border rounded-lg p-4">
               <h3 className="font-bold mb-4">Share This Article</h3>
               <div className="space-y-2">
