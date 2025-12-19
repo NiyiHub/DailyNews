@@ -75,6 +75,13 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
 
   useEffect(() => {
   async function fetchArticle() {
+    // Add this check first
+    if (!params.slug) {
+      console.error('No slug provided in params:', params);
+      setLoading(false);
+      return;
+    }
+
     try {
       const res = await fetch(
         'https://daily-news-5k66.onrender.com/news/written/get/'
@@ -83,10 +90,12 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
       
       const articles: Article[] = await res.json();
       
-      // Find by slug instead of ID
+      console.log('Looking for slug:', params.slug);
+      console.log('Available articles:', articles.map(a => ({ id: a.id, slug: a.slug })));
+      
       const found = articles.find((a) => a.slug === params.slug);
       
-      console.log('slug', params.slug, 'found', !!found);
+      console.log('Found article:', found);
       setArticle(found || null);
     } catch (error) {
       console.error('Error fetching article:', error);
